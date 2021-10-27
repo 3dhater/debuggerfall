@@ -188,7 +188,14 @@ void Application::MainLoop()
 			}
 		}
 
-		m_cameraFly->OnUpdate();
+		/*if (m_inputContext->m_kbm == miKeyboardModifier::Alt)
+		{
+			Mat4 lookAt;
+			math::makeLookAtRHMatrix(lookAt, v4f(), -m_activeCamera->m_localPosition, v4f(0.f, 1.f, 0.f, 0.f));
+			m_activeCamera->m_rotationMatrix.identity();
+			m_activeCamera->m_rotationMatrix.setBasis(lookAt);
+		}*/
+		m_activeCamera->OnUpdate();
 		if (isSpace)
 		{
 			m_activeCamera->Rotate(m_inputContext->m_mouseDelta, m_dt);
@@ -209,6 +216,8 @@ void Application::MainLoop()
 				m_activeCamera->MoveUp(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_Q))
 				m_activeCamera->MoveDown(m_dt);
+
+			
 
 			auto cursorX = std::floor((f32)m_mainWindow->m_currentSize.x / 2.f);
 			auto cursorY = std::floor((f32)m_mainWindow->m_currentSize.y / 2.f);
@@ -270,8 +279,14 @@ void Application::MainLoop()
 				miSetMatrix(miMatrixType::World, &W);
 				Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
 				miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
-				m_gpu->SetMesh(m_testMapCell->m_meshGPU);
 				m_gpu->SetTexture(0, miGetBlackTexture());
+				m_gpu->SetMesh(m_testMapCell->m_meshGPU0);
+				m_gpu->Draw();
+				m_gpu->SetMesh(m_testMapCell->m_meshGPU1);
+				m_gpu->Draw();
+				m_gpu->SetMesh(m_testMapCell->m_meshGPU2);
+				m_gpu->Draw();
+				m_gpu->SetMesh(m_testMapCell->m_meshGPU3);
 				m_gpu->Draw();
 			}
 

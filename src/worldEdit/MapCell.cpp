@@ -12,14 +12,18 @@ MapCell::MapCell()
 
 MapCell::~MapCell()
 {
-	if(m_meshGPU)
-		miDestroy(m_meshGPU);
+	if (m_meshGPU0) miDestroy(m_meshGPU0);
+	if (m_meshGPU1) miDestroy(m_meshGPU1);
+	if (m_meshGPU2) miDestroy(m_meshGPU2);
+	if (m_meshGPU3) miDestroy(m_meshGPU3);
 }
 
 void MapCell::Generate()
 {
-	if (m_meshGPU)
-		miDestroy(m_meshGPU);
+	if (m_meshGPU0) miDestroy(m_meshGPU0);
+	if (m_meshGPU1) miDestroy(m_meshGPU1);
+	if (m_meshGPU2) miDestroy(m_meshGPU2);
+	if (m_meshGPU3) miDestroy(m_meshGPU3);
 
 	miMesh m_meshCPU;
 	m_meshCPU.m_vertexType = miMeshVertexType::Triangle;
@@ -59,6 +63,8 @@ void MapCell::Generate()
 
 	v3f pos;
 	f32 quadSize = 0.00005f;
+	f32 quadSizeHalf = quadSize * 0.5f;
+	v3f hsz(quadSizeHalf, 0.f, quadSizeHalf);
 	
 	auto vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
 	auto iPtr = (u16*)m_meshCPU.m_indices;
@@ -71,22 +77,22 @@ void MapCell::Generate()
 		{
 			quad.Set(pos, quadSize);
 
-			vPtr->Position = quad.m_v1;
+			vPtr->Position = quad.m_v1 + hsz;
 			vPtr->UV.set(0.f, 0.f);
 			vPtr->Color.set(1.f);
 			vPtr++;
 			
-			vPtr->Position = quad.m_v2;
+			vPtr->Position = quad.m_v2 + hsz;
 			vPtr->UV.set(1.f, 0.f);
 			vPtr->Color.set(1.f);
 			vPtr++;
 
-			vPtr->Position = quad.m_v3;
+			vPtr->Position = quad.m_v3 + hsz;
 			vPtr->UV.set(1.f, 1.f);
 			vPtr->Color.set(1.f);
 			vPtr++;
 
-			vPtr->Position = quad.m_v4;
+			vPtr->Position = quad.m_v4 + hsz;
 			vPtr->UV.set(0.f, 1.f);
 			vPtr->Color.set(1.f);
 			vPtr++;
@@ -115,5 +121,28 @@ void MapCell::Generate()
 
 	miGPUMeshInfo mi;
 	mi.m_meshPtr = &m_meshCPU;
-	m_meshGPU = miCreateGPUMesh(&mi);
+	m_meshGPU0 = miCreateGPUMesh(&mi);
+	
+	f32 width = quadSize * 100.f;
+
+	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
+	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	{
+		vPtr[i].Position.x -= width;
+	}
+	m_meshGPU1 = miCreateGPUMesh(&mi);
+
+	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
+	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	{
+		vPtr[i].Position.z -= width;
+	}
+	m_meshGPU2 = miCreateGPUMesh(&mi);
+
+	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
+	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	{
+		vPtr[i].Position.x += width;
+	}
+	m_meshGPU3 = miCreateGPUMesh(&mi);
 }
