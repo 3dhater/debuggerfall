@@ -3,9 +3,16 @@
 #include "mixer.lib.window.h"
 #include "mixer.lib.videoDriver.h"
 #include "mixer.lib.event.h"
+#include "mixer.lib.popup.h"
+#include "mixer.lib.material.h"
+#include "mixer.gui.h"
+
 #include "application.h"
+#include "MapCell.h"
 
 #include <filesystem>
+
+#define CommandID_TerrainEditor 1
 
 Application* g_app = nullptr;
 
@@ -36,6 +43,39 @@ void window_onActivate(miWindow* window)
 	g_app->m_inputContext->ResetHold();
 }
 
+void window_callbackOnCommand(s32 commandID) {
+	g_app->m_dt = 0.f;
+	switch (commandID)
+	{
+	default:
+		break;
+	case CommandID_TerrainEditor: g_app->ShowGUITab(CommandID_TerrainEditor); break;
+	}
+}
+
+ApplicationGUI::ApplicationGUI()
+{
+	m_fontDefault = miGUILoadFont(L"../res/fonts/Noto/notosans.txt");
+	m_context = miGUICreateContext(g_app->m_mainWindow);
+}
+
+ApplicationGUI::~ApplicationGUI()
+{
+	if (m_panel_terrain) m_context->DeleteElement(m_panel_terrain);
+	if (m_context) miGUIDestroyContext(m_context);
+}
+
+void ApplicationGUI::Init()
+{
+	m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
+	m_panel_terrain->m_color = ColorWhite;
+	m_panel_terrain->m_color.setAlpha(0.3f);
+	//m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
+	m_panel_terrain->m_draw = true;
+	m_panel_terrain->m_useScroll = false;
+	m_panel_terrain->SetVisible(false);
+}
+
 Application::Application()
 {
 	g_app = this;
@@ -43,6 +83,11 @@ Application::Application()
 
 Application::~Application()
 {
+	if (m_testMapCell)
+		delete m_testMapCell;
+
+	if (m_GUI)
+		delete m_GUI;
 	if (m_cameraFly)
 		delete m_cameraFly;
 	if (m_libContext)
@@ -59,6 +104,10 @@ void Application::OnCreate(const char* videoDriver)
 			fclose(logFile);
 	}
 
+	miLogSetErrorOutput(log_onError);
+	miLogSetWarningOutput(log_onWarning);
+	miLogSetInfoOutput(log_onInfo);
+
 	m_inputContext = miCreate<miInputContext>();
 	m_libContext = miCreate<miLibContext>();
 	m_libContext->Start(m_inputContext);
@@ -67,6 +116,7 @@ void Application::OnCreate(const char* videoDriver)
 	m_mainWindow = miCreateWindow(800, 600, windowFlags, 0);
 	m_mainWindow->m_onClose = window_onCLose;
 	m_mainWindow->m_onActivate = window_onActivate;
+	m_mainWindow->m_onCommand = window_callbackOnCommand;
 	m_mainWindow->Show();
 
 	if (!miInitVideoDriver(videoDriver, m_mainWindow))
@@ -104,13 +154,21 @@ vidOk:
 	m_gpu->GetDepthRange(&m_gpuDepthRange);
 
 	m_cameraFly = new FlyCamera;
-	m_cameraFly->m_localPosition.set(10.f, 5.f, 10.f, 0.f);
+	m_cameraFly->m_localPosition.set(0.f, 0.0002f, 0.f, 0.f);
+	m_cameraFly->m_near = 0.00001000f;
+	m_cameraFly->m_far = 100.f;
+	m_cameraFly->m_moveSpeedDefault = 0.0001f;
 	{
 		Mat4 lookAt;
-		math::makeLookAtRHMatrix(lookAt, m_cameraFly->m_localPosition, v4f(), v4f(0.f, 1.f, 0.f, 0.f));
+		math::makeLookAtRHMatrix(lookAt, m_cameraFly->m_localPosition, v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 1.f, 0.f, 0.f));
 		m_cameraFly->m_rotationMatrix.setBasis(lookAt);
 	}
 	m_activeCamera = m_cameraFly;
+
+	m_GUI = new ApplicationGUI;
+	m_GUI->Init();
+
+	OpenMap();
 }
 
 void Application::MainLoop()
@@ -118,8 +176,20 @@ void Application::MainLoop()
 	miEvent currentEvent;
 	while (miRun(&m_dt))
 	{
+		bool isSpace = m_inputContext->IsKeyHold(miKey::K_SPACE);
+
+		if (m_inputContext->m_isRMBDown && !isSpace)
+		{
+			auto p = ShowPopup();
+			if (p)
+			{
+				p->Show(m_mainWindow, (s32)m_inputContext->m_cursorCoords.x, (s32)m_inputContext->m_cursorCoords.y);
+				miDestroy(p);
+			}
+		}
+
 		m_cameraFly->OnUpdate();
-		if (m_inputContext->m_isRMBHold)
+		if (isSpace)
 		{
 			m_activeCamera->Rotate(m_inputContext->m_mouseDelta, m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_LSHIFT) || m_inputContext->IsKeyHold(miKey::K_RSHIFT))
@@ -149,7 +219,7 @@ void Application::MainLoop()
 			miSetCursorPosition(cursorX, cursorY, m_mainWindow);
 		}
 
-		//m_GUI->m_context->Update(m_dt);
+		m_GUI->m_context->Update(m_dt);
 		//m_isCursorInGUI = miIsCursorInGUI();
 		//m_isGUIInputFocus = miIsInputInGUI();
 
@@ -165,7 +235,7 @@ void Application::MainLoop()
 			case miEventType::Window: {
 				if (currentEvent.m_event_window.m_event == miEvent_Window::size_changed) {
 					m_gpu->UpdateMainRenderTarget(v2f((f32)m_mainWindow->m_currentSize.x, (f32)m_mainWindow->m_currentSize.y));
-					//m_GUI->m_context->NeedRebuild();
+					m_GUI->m_context->NeedRebuild();
 					//_callViewportOnWindowSize();
 				}
 			}break;
@@ -184,12 +254,33 @@ void Application::MainLoop()
 			miSetMatrix(miMatrixType::View, &m_activeCamera->m_view);
 			miSetMatrix(miMatrixType::Projection, &m_activeCamera->m_projection);
 			miSetMatrix(miMatrixType::ViewProjection, &m_activeCamera->m_viewProjection);
+			
+
+			/*m_gpu->UseDepth(false);*/
+			if (m_testMapCell)
+			{
+				miMaterial default_polygon_material;
+				default_polygon_material.m_colorDiffuse.set(1.f, 0.5f, 0.5f, 0.8f);
+				default_polygon_material.m_type = miMaterialType::Standart;
+				default_polygon_material.m_sunPos = v4f(0.f, 10.f, 0.f, 0.f);
+				default_polygon_material.m_wireframe = true;
+				miSetMaterial(&default_polygon_material);
+
+				Mat4 W;
+				miSetMatrix(miMatrixType::World, &W);
+				Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
+				miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
+				m_gpu->SetMesh(m_testMapCell->m_meshGPU);
+				m_gpu->SetTexture(0, miGetBlackTexture());
+				m_gpu->Draw();
+			}
+
 			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(-1.f, 0.f, 0.f, 0.f), ColorRed);
 			m_gpu->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, -1.f, 0.f), ColorLime);
 
-			//m_gpu->BeginDrawGUI();
-			//m_GUI->m_context->DrawAll();
-			//m_gpu->EndDrawGUI();
+			m_gpu->BeginDrawGUI();
+			m_GUI->m_context->DrawAll();
+			m_gpu->EndDrawGUI();
 
 			m_gpu->EndDraw();
 			m_gpu->SwapBuffers();
@@ -208,4 +299,44 @@ void Application::WriteLog(const char* message)
 		fprintf(logFile, "%s", message);
 		fclose(logFile);
 	}
+}
+
+miPopup* Application::ShowPopup()
+{
+	miPopup* p = miCreatePopup(); // new miPopup;
+	p->AddItem(L"Terrain editor", CommandID_TerrainEditor, 0);
+	return p;
+}
+
+void Application::ShowGUITab(u32 id)
+{
+	switch (id)
+	{
+	case CommandID_TerrainEditor:
+		m_GUI->m_panel_terrain->SetVisible(true);
+		break;
+	}
+}
+
+void Application::OpenMap()
+{
+	if (std::filesystem::exists("../data/world.dat"))
+	{
+		ReadWorld();
+	}
+	else
+	{
+		GenerateWorld();
+	}
+}
+
+void Application::GenerateWorld()
+{
+	m_testMapCell = new MapCell;
+	m_testMapCell->Generate();
+}
+
+void Application::ReadWorld()
+{
+
 }

@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\worldEdit\application.cpp" />
+    <ClCompile Include="..\..\src\worldEdit\MapCell.cpp" />
     <ClCompile Include="..\..\src\worldEdit\worldEdit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\worldEdit\application.h" />
+    <ClInclude Include="..\..\src\worldEdit\MapCell.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -1,6 +1,21 @@
 ﻿#ifndef _APP_H_
 #define _APP_H_
 
+class MapCell;
+
+class ApplicationGUI
+{
+public:
+	ApplicationGUI();
+	~ApplicationGUI();
+
+	miGUIContext* m_context = 0;
+	miGUIFont* m_fontDefault = 0;
+	miGUIPanel* m_panel_terrain = 0;
+
+	void Init();
+};
+
 class FlyCamera
 {
 public:
@@ -15,7 +30,7 @@ public:
 	f32 m_moveSpeed = 10.f;
 	f32 m_moveSpeedDefault = 10.f;
 	f32 m_fov = 1.74533f;
-	f32 m_aspect = 1.3333333f;
+	f32 m_aspect = 800.f / 600.f;
 	f32 m_near = 0.01f;
 	f32 m_far = 1000.f;
 
@@ -94,11 +109,18 @@ public:
 	v2f m_gpuDepthRange;
 	FlyCamera* m_activeCamera = 0;
 	FlyCamera* m_cameraFly = 0;
+	ApplicationGUI* m_GUI = 0;
 
 	void OnCreate(const char*);
 	void MainLoop();
 	void WriteLog(const char* message);
-	
+	miPopup* ShowPopup();
+	void ShowGUITab(u32);
+	void OpenMap();
+	void GenerateWorld();
+	void ReadWorld();
+
+	MapCell* m_testMapCell = 0;
 };
 
 #endif

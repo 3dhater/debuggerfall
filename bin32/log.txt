@@ -1,0 +1,9 @@
+Info: Init window...
+Info: Init video driver - OpenGL...
+Info: Init OpenGL 3.3
+Info: Vendor: Intel
+Info: Renderer: Intel(R) HD Graphics 510
+Info: Load texture: ../res/gui/defaultIcons.png
+Info: Load texture: ../res/fonts/Noto\notosans.txt0.dds
+Info: Load texture: ../res/fonts/Noto\notosans.txt1.dds
+Info: Destroy video driver...
