@@ -168,6 +168,28 @@ vidOk:
 	m_GUI = new ApplicationGUI;
 	m_GUI->Init();
 
+	{
+		std::string src = "hello hello hello hello hello hello hello hello";
+		auto compressBound = miGetCompressBound(src.size());
+		u8* compBuf = (u8*)malloc(compressBound);
+		
+		u32 srcSize = src.size();
+		u32 compSize = compressBound;
+		miCompress(src.data(), srcSize, compBuf, &compSize);
+
+		{
+			u8* decompBuf = (u8*)malloc(srcSize+1);
+			u32 dstLen = srcSize;
+
+			miUncompress(compBuf, compSize, decompBuf, &dstLen);
+			decompBuf[srcSize] = 0;
+
+			free(decompBuf);
+		}
+
+		free(compBuf);
+	}
+
 	OpenMap();
 }
 
@@ -275,7 +297,7 @@ void Application::MainLoop()
 				default_polygon_material.m_wireframe = true;
 				miSetMaterial(&default_polygon_material);
 
-				Mat4 W;
+				/*Mat4 W;
 				miSetMatrix(miMatrixType::World, &W);
 				Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
 				miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
@@ -287,7 +309,7 @@ void Application::MainLoop()
 				m_gpu->SetMesh(m_testMapCell->m_meshGPU2);
 				m_gpu->Draw();
 				m_gpu->SetMesh(m_testMapCell->m_meshGPU3);
-				m_gpu->Draw();
+				m_gpu->Draw();*/
 			}
 
 			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(-1.f, 0.f, 0.f, 0.f), ColorRed);

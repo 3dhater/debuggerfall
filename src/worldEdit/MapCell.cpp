@@ -7,32 +7,59 @@
 
 MapCell::MapCell() 
 {
+	for (u32 i = 0; i < MapCellMaxLOD; ++i)
+	{
+		m_meshGPU0[i] = 0;
+		m_meshGPU1[i] = 0;
+		m_meshGPU2[i] = 0;
+		m_meshGPU3[i] = 0;
 
+		m_meshCPU0[i] = 0;
+		m_meshCPU1[i] = 0;
+		m_meshCPU2[i] = 0;
+		m_meshCPU3[i] = 0;
+	}
 }
 
 MapCell::~MapCell()
 {
-	if (m_meshGPU0) miDestroy(m_meshGPU0);
-	if (m_meshGPU1) miDestroy(m_meshGPU1);
-	if (m_meshGPU2) miDestroy(m_meshGPU2);
-	if (m_meshGPU3) miDestroy(m_meshGPU3);
+	for (u32 i = 0; i < MapCellMaxLOD; ++i)
+	{
+		if (m_meshGPU0[i]) miDestroy(m_meshGPU0[i]);
+		if (m_meshGPU1[i]) miDestroy(m_meshGPU1[i]);
+		if (m_meshGPU2[i]) miDestroy(m_meshGPU2[i]);
+		if (m_meshGPU3[i]) miDestroy(m_meshGPU3[i]);
+
+		if (m_meshCPU0[i]) miDestroy(m_meshCPU0[i]);
+		if (m_meshCPU1[i]) miDestroy(m_meshCPU1[i]);
+		if (m_meshCPU2[i]) miDestroy(m_meshCPU2[i]);
+		if (m_meshCPU3[i]) miDestroy(m_meshCPU3[i]);
+	}
 }
 
 void MapCell::Generate()
 {
-	if (m_meshGPU0) miDestroy(m_meshGPU0);
-	if (m_meshGPU1) miDestroy(m_meshGPU1);
-	if (m_meshGPU2) miDestroy(m_meshGPU2);
-	if (m_meshGPU3) miDestroy(m_meshGPU3);
+	for (u32 i = 0; i < MapCellMaxLOD; ++i)
+	{
+		if (m_meshGPU0[i]) miDestroy(m_meshGPU0[i]);
+		if (m_meshGPU1[i]) miDestroy(m_meshGPU1[i]);
+		if (m_meshGPU2[i]) miDestroy(m_meshGPU2[i]);
+		if (m_meshGPU3[i]) miDestroy(m_meshGPU3[i]);
 
-	miMesh m_meshCPU;
-	m_meshCPU.m_vertexType = miMeshVertexType::Triangle;
-	m_meshCPU.m_indexType = miMeshIndexType::u16;
-	m_meshCPU.m_stride = sizeof(miVertexTriangle);
-	m_meshCPU.m_vCount = 40000;
-	m_meshCPU.m_vertices = (u8*)miMalloc(m_meshCPU.m_stride * m_meshCPU.m_vCount);
-	m_meshCPU.m_iCount = 60000;
-	m_meshCPU.m_indices = (u8*)miMalloc(sizeof(u16) * m_meshCPU.m_iCount);
+		if (m_meshCPU0[i]) miDestroy(m_meshCPU0[i]);
+		if (m_meshCPU1[i]) miDestroy(m_meshCPU1[i]);
+		if (m_meshCPU2[i]) miDestroy(m_meshCPU2[i]);
+		if (m_meshCPU3[i]) miDestroy(m_meshCPU3[i]);
+	}
+
+	miMesh meshCPU;
+	meshCPU.m_vertexType = miMeshVertexType::Triangle;
+	meshCPU.m_indexType = miMeshIndexType::u16;
+	meshCPU.m_stride = sizeof(miVertexTriangle);
+	meshCPU.m_vCount = 40000;
+	meshCPU.m_vertices = (u8*)miMalloc(meshCPU.m_stride * meshCPU.m_vCount);
+	meshCPU.m_iCount = 60000;
+	meshCPU.m_indices = (u8*)miMalloc(sizeof(u16) * meshCPU.m_iCount);
 
 	struct Quad
 	{
@@ -66,8 +93,8 @@ void MapCell::Generate()
 	f32 quadSizeHalf = quadSize * 0.5f;
 	v3f hsz(quadSizeHalf, 0.f, quadSizeHalf);
 	
-	auto vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
-	auto iPtr = (u16*)m_meshCPU.m_indices;
+	auto vPtr = (miVertexTriangle*)meshCPU.m_vertices;
+	auto iPtr = (u16*)meshCPU.m_indices;
 
 	u32 vertexIndexCounter = 0;
 
@@ -120,29 +147,29 @@ void MapCell::Generate()
 	}
 
 	miGPUMeshInfo mi;
-	mi.m_meshPtr = &m_meshCPU;
-	m_meshGPU0 = miCreateGPUMesh(&mi);
+	mi.m_meshPtr = &meshCPU;
+	m_meshGPU0[0] = miCreateGPUMesh(&mi);
 	
 	f32 width = quadSize * 100.f;
 
-	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
-	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	vPtr = (miVertexTriangle*)meshCPU.m_vertices;
+	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.x -= width;
 	}
-	m_meshGPU1 = miCreateGPUMesh(&mi);
+	m_meshGPU1[0] = miCreateGPUMesh(&mi);
 
-	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
-	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	vPtr = (miVertexTriangle*)meshCPU.m_vertices;
+	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.z -= width;
 	}
-	m_meshGPU2 = miCreateGPUMesh(&mi);
+	m_meshGPU2[0] = miCreateGPUMesh(&mi);
 
-	vPtr = (miVertexTriangle*)m_meshCPU.m_vertices;
-	for (u32 i = 0; i < m_meshCPU.m_vCount; ++i)
+	vPtr = (miVertexTriangle*)meshCPU.m_vertices;
+	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.x += width;
 	}
-	m_meshGPU3 = miCreateGPUMesh(&mi);
+	m_meshGPU3[0] = miCreateGPUMesh(&mi);
 }
