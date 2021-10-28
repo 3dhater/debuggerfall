@@ -107,21 +107,26 @@ void MapCell::Generate()
 			vPtr->Position = quad.m_v1 + hsz;
 			vPtr->UV.set(0.f, 0.f);
 			vPtr->Color.set(1.f);
+			m_aabb.add(vPtr->Position);
 			vPtr++;
 			
+
 			vPtr->Position = quad.m_v2 + hsz;
 			vPtr->UV.set(1.f, 0.f);
 			vPtr->Color.set(1.f);
+			m_aabb.add(vPtr->Position);
 			vPtr++;
 
 			vPtr->Position = quad.m_v3 + hsz;
 			vPtr->UV.set(1.f, 1.f);
 			vPtr->Color.set(1.f);
+			m_aabb.add(vPtr->Position);
 			vPtr++;
 
 			vPtr->Position = quad.m_v4 + hsz;
 			vPtr->UV.set(0.f, 1.f);
 			vPtr->Color.set(1.f);
+			m_aabb.add(vPtr->Position);
 			vPtr++;
 
 			*iPtr = vertexIndexCounter; 
@@ -156,6 +161,7 @@ void MapCell::Generate()
 	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.x -= width;
+		m_aabb.add(vPtr[i].Position);
 	}
 	m_meshGPU1[0] = miCreateGPUMesh(&mi);
 
@@ -163,6 +169,7 @@ void MapCell::Generate()
 	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.z -= width;
+		m_aabb.add(vPtr[i].Position);
 	}
 	m_meshGPU2[0] = miCreateGPUMesh(&mi);
 
@@ -170,6 +177,8 @@ void MapCell::Generate()
 	for (u32 i = 0; i < meshCPU.m_vCount; ++i)
 	{
 		vPtr[i].Position.x += width;
+		m_aabb.add(vPtr[i].Position);
 	}
 	m_meshGPU3[0] = miCreateGPUMesh(&mi);
+	
 }

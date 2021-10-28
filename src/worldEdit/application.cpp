@@ -83,6 +83,10 @@ Application::Application()
 
 Application::~Application()
 {
+	for (u32 i = 0; i < m_mapCells.m_size; ++i)
+	{
+		delete m_mapCells.m_data[i];
+	}
 	if (m_testMapCell)
 		delete m_testMapCell;
 
@@ -168,7 +172,15 @@ vidOk:
 	m_GUI = new ApplicationGUI;
 	m_GUI->Init();
 
+	/*u32 num = 2;
+	for (u32 i = 0; i < 100; ++i)
 	{
+		num = i;
+		if ((num & 0x1) == 0)
+			printf("%u EVEN\n", num);
+	}*/
+
+	/*{
 		std::string src = "hello hello hello hello hello hello hello hello";
 		auto compressBound = miGetCompressBound(src.size());
 		u8* compBuf = (u8*)malloc(compressBound);
@@ -188,7 +200,7 @@ vidOk:
 		}
 
 		free(compBuf);
-	}
+	}*/
 
 	OpenMap();
 }
@@ -250,6 +262,8 @@ void Application::MainLoop()
 			miSetCursorPosition(cursorX, cursorY, m_mainWindow);
 		}
 
+		FrustumCullMap();
+
 		m_GUI->m_context->Update(m_dt);
 		//m_isCursorInGUI = miIsCursorInGUI();
 		//m_isGUIInputFocus = miIsInputInGUI();
@@ -288,28 +302,20 @@ void Application::MainLoop()
 			
 
 			/*m_gpu->UseDepth(false);*/
+			miMaterial default_polygon_material;
+			default_polygon_material.m_colorDiffuse.set(1.f, 0.5f, 0.5f, 0.8f);
+			default_polygon_material.m_type = miMaterialType::Standart;
+			default_polygon_material.m_sunPos = v4f(0.f, 10.f, 0.f, 0.f);
+			default_polygon_material.m_wireframe = true;
+			miSetMaterial(&default_polygon_material);
 			if (m_testMapCell)
 			{
-				miMaterial default_polygon_material;
-				default_polygon_material.m_colorDiffuse.set(1.f, 0.5f, 0.5f, 0.8f);
-				default_polygon_material.m_type = miMaterialType::Standart;
-				default_polygon_material.m_sunPos = v4f(0.f, 10.f, 0.f, 0.f);
-				default_polygon_material.m_wireframe = true;
-				miSetMaterial(&default_polygon_material);
+				DrawMapCell(m_testMapCell);
+			}
 
-				/*Mat4 W;
-				miSetMatrix(miMatrixType::World, &W);
-				Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
-				miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
-				m_gpu->SetTexture(0, miGetBlackTexture());
-				m_gpu->SetMesh(m_testMapCell->m_meshGPU0);
-				m_gpu->Draw();
-				m_gpu->SetMesh(m_testMapCell->m_meshGPU1);
-				m_gpu->Draw();
-				m_gpu->SetMesh(m_testMapCell->m_meshGPU2);
-				m_gpu->Draw();
-				m_gpu->SetMesh(m_testMapCell->m_meshGPU3);
-				m_gpu->Draw();*/
+			for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
+			{
+				DrawMapCell(m_visibleMapCells.m_data[i]);
 			}
 
 			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(-1.f, 0.f, 0.f, 0.f), ColorRed);
@@ -369,11 +375,84 @@ void Application::OpenMap()
 
 void Application::GenerateWorld()
 {
-	m_testMapCell = new MapCell;
-	m_testMapCell->Generate();
+	/*m_testMapCell = new MapCell;
+	m_testMapCell->Generate();*/
+	
+	// Создать ячейки. Записать их в файл.
+	// m_mapCells будет хранить указатели на все ячейки.
+
+	u32 cellsNumX = 3;
+	u32 cellsNumY = 3;
+
+	f32 cellSize = 0.01f;// 0.01f = 100m
+
+	f32 mapSizeX = (f32)cellsNumX * cellSize; 
+	f32 mapSizeY = (f32)cellsNumY * cellSize;
+
+	f32 mapSizeHalfX = mapSizeX * 0.5f;
+	f32 mapSizeHalfY = mapSizeY * 0.5f;
+
+
+	v3f position;
+	position.x = -mapSizeHalfX;
+	position.z = -mapSizeHalfY;
+
+	for (u32 iy = 0; iy < cellsNumY; ++iy)
+	{
+		for (u32 ix = 0; ix < cellsNumX; ++ix)
+		{
+			MapCell* newCell = new MapCell;
+			newCell->m_id = iy + ix;
+			newCell->Generate();
+
+			newCell->m_position = position;
+
+			m_mapCells.push_back(newCell);
+
+			position.x += cellSize;
+		}
+	
+		position.x = -mapSizeHalfX;
+		position.z += cellSize;
+	}
 }
 
 void Application::ReadWorld()
 {
 
 }
+
+void Application::DrawMapCell(MapCell* cell)
+{
+	Mat4 W;
+	W.setTranslation(cell->m_position);
+
+	miSetMatrix(miMatrixType::World, &W);
+
+	Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
+	miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
+	m_gpu->SetTexture(0, miGetBlackTexture());
+	m_gpu->SetMesh(cell->m_meshGPU0[0]);
+	m_gpu->Draw();
+	m_gpu->SetMesh(cell->m_meshGPU1[0]);
+	m_gpu->Draw();
+	m_gpu->SetMesh(cell->m_meshGPU2[0]);
+	m_gpu->Draw();
+	m_gpu->SetMesh(cell->m_meshGPU3[0]);
+	m_gpu->Draw();
+}
+
+void Application::FrustumCullMap()
+{
+	m_visibleMapCells.clear();
+	
+	for (u32 i = 0; i < m_mapCells.m_size; ++i)
+	{
+		if (m_activeCamera->m_frust.AABBInFrustum(m_mapCells.m_data[i]->m_aabb, m_mapCells.m_data[i]->m_position))
+		{
+			m_visibleMapCells.push_back(m_mapCells.m_data[i]);
+		}
+	}
+}
+
+

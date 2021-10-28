@@ -33,6 +33,10 @@ public:
 	miMesh* m_meshCPU2[MapCellMaxLOD];
 	miMesh* m_meshCPU3[MapCellMaxLOD];
 
+	Aabb m_aabb;
+
+	u32 m_id = 0;
+
 	void Generate();
 };
 
