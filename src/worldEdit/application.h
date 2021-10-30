@@ -2,6 +2,7 @@
 #define _APP_H_
 
 class MapCell;
+class Player;
 
 class ApplicationGUI
 {
@@ -12,6 +13,11 @@ public:
 	miGUIContext* m_context = 0;
 	miGUIFont* m_fontDefault = 0;
 	miGUIPanel* m_panel_terrain = 0;
+	
+	miGUIPanel* m_panel_debug = 0;
+	miGUIText* m_debug_text_FPS = 0;
+	miGUIText* m_debug_text_position = 0;
+	miGUIText* m_debug_text_cameraCellID = 0;
 
 	void Init();
 };
@@ -326,6 +332,9 @@ public:
 	miArray<MapCell*> m_visibleMapCells;
 	void DrawMapCell(MapCell*);
 	void FrustumCullMap();
+
+	Player* m_player = 0;
+	void FindCurrentCellID();
 };
 
 #endif

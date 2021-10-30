@@ -9,6 +9,7 @@
 
 #include "application.h"
 #include "MapCell.h"
+#include "Player.h"
 
 #include <filesystem>
 
@@ -61,6 +62,7 @@ ApplicationGUI::ApplicationGUI()
 
 ApplicationGUI::~ApplicationGUI()
 {
+	if (m_panel_debug)m_context->DeleteElement(m_panel_debug);
 	if (m_panel_terrain) m_context->DeleteElement(m_panel_terrain);
 	if (m_context) miGUIDestroyContext(m_context);
 }
@@ -74,6 +76,25 @@ void ApplicationGUI::Init()
 	m_panel_terrain->m_draw = true;
 	m_panel_terrain->m_useScroll = false;
 	m_panel_terrain->SetVisible(false);
+
+	m_panel_debug = m_context->CreatePanel(v2f(0.f, 0.f), v2f(800.f, 200.f));
+	m_panel_debug->m_color = ColorWhite;
+	m_panel_debug->m_color.setAlpha(0.3f);
+	//m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
+	m_panel_debug->m_draw = true;
+	m_panel_debug->m_useScroll = false;
+	{
+		m_debug_text_FPS = m_context->CreateText(v2f(), m_fontDefault, L"FPS: ");
+		m_debug_text_FPS->SetParent(m_panel_debug);
+
+		m_debug_text_position = m_context->CreateText(v2f(100.f, 0.f), m_fontDefault, L":");
+		m_debug_text_position->SetParent(m_panel_debug);
+
+		m_debug_text_cameraCellID = m_context->CreateText(v2f(0.f, 20.f), m_fontDefault, L":");
+		m_debug_text_cameraCellID->SetParent(m_panel_debug);
+	}
+
+	m_panel_debug->SetVisible(false);
 }
 
 Application::Application()
@@ -83,6 +104,8 @@ Application::Application()
 
 Application::~Application()
 {
+	if (m_player) 
+		delete m_player;
 	for (u32 i = 0; i < m_mapCells.m_size; ++i)
 	{
 		delete m_mapCells.m_data[i];
@@ -156,6 +179,7 @@ vidOk:
 	m_gpu = miGetVideoDriver();
 	m_gpu->SetClearColor(0.41f, 0.41f, 0.41f, 1.f);
 	m_gpu->GetDepthRange(&m_gpuDepthRange);
+	//m_gpu->UseVSync(false);
 
 	m_cameraFly = new FlyCamera;
 	m_cameraFly->m_localPosition.set(0.f, 0.0002f, 0.f, 0.f);
@@ -202,14 +226,21 @@ vidOk:
 		free(compBuf);
 	}*/
 
+	m_player = new Player;
+
 	OpenMap();
+
 }
 
 void Application::MainLoop()
 {
+	s32 fps = 0;
+	f32 fpsTime = 0.f;
+
 	miEvent currentEvent;
 	while (miRun(&m_dt))
 	{
+
 		bool isSpace = m_inputContext->IsKeyHold(miKey::K_SPACE);
 
 		if (m_inputContext->m_isRMBDown && !isSpace)
@@ -220,6 +251,35 @@ void Application::MainLoop()
 				p->Show(m_mainWindow, (s32)m_inputContext->m_cursorCoords.x, (s32)m_inputContext->m_cursorCoords.y);
 				miDestroy(p);
 			}
+		}
+
+		if (m_inputContext->IsKeyHit(miKey::K_F3))
+		{
+			m_GUI->m_panel_debug->SetVisible(m_GUI->m_panel_debug->m_visible ? false : true);
+		}
+
+		if (m_GUI->m_panel_debug->m_visible)
+		{
+			++fps;
+			fpsTime += m_dt;
+			if (fpsTime > 1.f)
+			{
+				m_GUI->m_debug_text_FPS->SetText(L"FPS:%i", fps);
+				fps = 0;
+				fpsTime = 0.f;
+			}
+
+			m_GUI->m_debug_text_position->SetText(L"%f %f %f (%Lf %Lf %Lf)", 
+				m_activeCamera->m_localPosition.x,
+				m_activeCamera->m_localPosition.y, 
+				m_activeCamera->m_localPosition.z,
+				
+				(f64)m_activeCamera->m_localPosition.x * 10000., 
+				(f64)m_activeCamera->m_localPosition.y * 10000.,
+				(f64)m_activeCamera->m_localPosition.z * 10000.
+			);
+
+			m_GUI->m_debug_text_cameraCellID->SetText(L"Cell: %i", m_player->m_cellID);
 		}
 
 		/*if (m_inputContext->m_kbm == miKeyboardModifier::Alt)
@@ -234,7 +294,7 @@ void Application::MainLoop()
 		{
 			m_activeCamera->Rotate(m_inputContext->m_mouseDelta, m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_LSHIFT) || m_inputContext->IsKeyHold(miKey::K_RSHIFT))
-				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault * 5.f;
+				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault * 50.f;
 			else
 				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault;
 
@@ -262,6 +322,7 @@ void Application::MainLoop()
 			miSetCursorPosition(cursorX, cursorY, m_mainWindow);
 		}
 
+		FindCurrentCellID();
 		FrustumCullMap();
 
 		m_GUI->m_context->Update(m_dt);
@@ -402,12 +463,12 @@ void Application::GenerateWorld()
 		for (u32 ix = 0; ix < cellsNumX; ++ix)
 		{
 			MapCell* newCell = new MapCell;
-			newCell->m_id = iy + ix;
+			newCell->m_position = position;
 			newCell->Generate();
 
-			newCell->m_position = position;
 
 			m_mapCells.push_back(newCell);
+			newCell->m_id = m_mapCells.size();
 
 			position.x += cellSize;
 		}
@@ -432,13 +493,13 @@ void Application::DrawMapCell(MapCell* cell)
 	Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
 	miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
 	m_gpu->SetTexture(0, miGetBlackTexture());
-	m_gpu->SetMesh(cell->m_meshGPU0[0]);
+	m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU1[0]);
+	m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU2[0]);
+	m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU3[0]);
+	m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD]);
 	m_gpu->Draw();
 }
 
@@ -448,11 +509,51 @@ void Application::FrustumCullMap()
 	
 	for (u32 i = 0; i < m_mapCells.m_size; ++i)
 	{
+		//m_mapCells.m_data[i]->m_activeLOD = 0;
+		if(m_inputContext->IsKeyHold(miKey::K_1))
+			m_mapCells.m_data[i]->m_activeLOD = 1;
+		if (m_inputContext->IsKeyHold(miKey::K_2))
+			m_mapCells.m_data[i]->m_activeLOD = 2;
+		if (m_inputContext->IsKeyHold(miKey::K_3))
+			m_mapCells.m_data[i]->m_activeLOD = 3;
+		if (m_inputContext->IsKeyHold(miKey::K_4))
+			m_mapCells.m_data[i]->m_activeLOD = 4;
+		if (m_inputContext->IsKeyHold(miKey::K_5))
+			m_mapCells.m_data[i]->m_activeLOD = 5;
+		if (m_inputContext->IsKeyHold(miKey::K_0))
+			m_mapCells.m_data[i]->m_activeLOD = 0;
+
 		if (m_activeCamera->m_frust.AABBInFrustum(m_mapCells.m_data[i]->m_aabb, m_mapCells.m_data[i]->m_position))
 		{
+
 			m_visibleMapCells.push_back(m_mapCells.m_data[i]);
 		}
 	}
 }
 
+void Application::FindCurrentCellID()
+{
+	m_player->m_cellID = -1;
+	for (u32 i = 0; i < m_mapCells.m_size; ++i)
+	{
+		if (m_activeCamera->m_localPosition.x < m_mapCells.m_data[i]->m_aabbTransformed.m_min.x)
+			continue;
+		if (m_activeCamera->m_localPosition.x > m_mapCells.m_data[i]->m_aabbTransformed.m_max.x)
+			continue;
+		if (m_activeCamera->m_localPosition.z < m_mapCells.m_data[i]->m_aabbTransformed.m_min.z)
+			continue;
+		if (m_activeCamera->m_localPosition.z > m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
+			continue;
 
+		/*if (m_activeCamera->m_localPosition.x >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.x
+			&& m_activeCamera->m_localPosition.x <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.x
+			&& m_activeCamera->m_localPosition.z >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.z
+			&& m_activeCamera->m_localPosition.z <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
+		{
+			m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
+			return;
+		}*/
+		m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
+		return;
+	}
+}
