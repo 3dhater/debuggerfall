@@ -196,6 +196,8 @@ vidOk:
 	m_GUI = new ApplicationGUI;
 	m_GUI->Init();
 
+	
+
 	/*u32 num = 2;
 	for (u32 i = 0; i < 100; ++i)
 	{
@@ -436,14 +438,18 @@ void Application::OpenMap()
 
 void Application::GenerateWorld()
 {
+	miImage* heightMap = miLoadImage(L"../data/world/heightmap.png");
+	if (!heightMap)
+		return;
+
 	/*m_testMapCell = new MapCell;
 	m_testMapCell->Generate();*/
 	
 	// Создать ячейки. Записать их в файл.
 	// m_mapCells будет хранить указатели на все ячейки.
 
-	u32 cellsNumX = 3;
-	u32 cellsNumY = 3;
+	u32 cellsNumX = 2;
+	u32 cellsNumY = 2;
 
 	f32 cellSize = 0.01f;// 0.01f = 100m
 
@@ -452,7 +458,6 @@ void Application::GenerateWorld()
 
 	f32 mapSizeHalfX = mapSizeX * 0.5f;
 	f32 mapSizeHalfY = mapSizeY * 0.5f;
-
 
 	v3f position;
 	position.x = -mapSizeHalfX;
@@ -464,7 +469,7 @@ void Application::GenerateWorld()
 		{
 			MapCell* newCell = new MapCell;
 			newCell->m_position = position;
-			newCell->Generate();
+			newCell->Generate(heightMap, mapSizeX, mapSizeY);
 
 
 			m_mapCells.push_back(newCell);
@@ -476,6 +481,8 @@ void Application::GenerateWorld()
 		position.x = -mapSizeHalfX;
 		position.z += cellSize;
 	}
+
+	miDestroy(heightMap);
 }
 
 void Application::ReadWorld()

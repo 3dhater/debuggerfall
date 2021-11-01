@@ -12,13 +12,13 @@ LOD4 - 4
 #define MapCellMaxLOD 6
 class MapCell
 {
-	// currentLOD - LOD0, LOD1, LOD2...
-	void GenerateLOD(u32 lodID);
+	//// currentLOD - LOD0, LOD1, LOD2...
+	//void GenerateLOD(u32 lodID);
 public:
 	MapCell();
 	~MapCell();
 	
-	void GenerateLODs();
+	//void GenerateLODs();
 
 	struct Quad
 	{
@@ -62,7 +62,7 @@ public:
 	u32 m_id = 0;
 
 	u32 m_activeLOD = 0;
-	void Generate();
+	void Generate(miImage*, f32 mapSizeX, f32 mapSizeY);
 };
 
 
