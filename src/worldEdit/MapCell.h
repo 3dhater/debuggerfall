@@ -58,10 +58,12 @@ public:
 
 	Aabb m_aabb;
 	Aabb m_aabbTransformed;
+	v3f m_positionInWorld[4];
 
 	u32 m_id = 0;
+	bool m_inView = false;
 
-	u32 m_activeLOD = 0;
+	u32 m_activeLOD[4] = {0,0,0,0};
 	void Generate(miImage*, f32 mapSizeX, f32 mapSizeY);
 };
 

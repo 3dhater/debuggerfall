@@ -15,6 +15,12 @@
 
 #define CommandID_TerrainEditor 1
 
+f32 g_terrainLODDistance_0 = 0.005f;
+f32 g_terrainLODDistance_1 = 0.01f;
+f32 g_terrainLODDistance_2 = 0.015f;
+f32 g_terrainLODDistance_3 = 0.02f;
+f32 g_terrainLODDistance_4 = 0.025f;
+
 Application* g_app = nullptr;
 
 void log_onError(const char* message) {
@@ -294,6 +300,7 @@ void Application::MainLoop()
 		m_activeCamera->OnUpdate();
 		if (isSpace)
 		{
+			m_cameraWasMoved = true;
 			m_activeCamera->Rotate(m_inputContext->m_mouseDelta, m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_LSHIFT) || m_inputContext->IsKeyHold(miKey::K_RSHIFT))
 				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault * 50.f;
@@ -325,7 +332,13 @@ void Application::MainLoop()
 		}
 
 		FindCurrentCellID();
-		FrustumCullMap();
+
+		if (m_cameraWasMoved)
+		{
+			m_cameraWasMoved = false;
+			FrustumCullMap();
+			FindLODs();
+		}
 
 		m_GUI->m_context->Update(m_dt);
 		//m_isCursorInGUI = miIsCursorInGUI();
@@ -448,8 +461,8 @@ void Application::GenerateWorld()
 	// Создать ячейки. Записать их в файл.
 	// m_mapCells будет хранить указатели на все ячейки.
 
-	u32 cellsNumX = 2;
-	u32 cellsNumY = 2;
+	u32 cellsNumX = 3;
+	u32 cellsNumY = 3;
 
 	f32 cellSize = 0.01f;// 0.01f = 100m
 
@@ -500,14 +513,34 @@ void Application::DrawMapCell(MapCell* cell)
 	Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
 	miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
 	m_gpu->SetTexture(0, miGetBlackTexture());
-	m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD]);
+	m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD[0]]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD]);
+	m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD[1]]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD]);
+	m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD[2]]);
 	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD]);
+	m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD[3]]);
 	m_gpu->Draw();
+}
+
+void Application::FindLODs()
+{
+	for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
+	{
+		auto cell = m_visibleMapCells.m_data[i];
+		
+		for (u32 k = 0; k < 4; ++k)
+		{
+			f32 d = cell->m_positionInWorld[k].distance(m_activeCamera->m_localPosition);
+
+			if (d < g_terrainLODDistance_0)        cell->m_activeLOD[k] = 0;
+			else if (d < g_terrainLODDistance_1)   cell->m_activeLOD[k] = 1;
+			else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
+			else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
+			else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
+			else cell->m_activeLOD[k] = 5;
+		}
+	}
 }
 
 void Application::FrustumCullMap()
@@ -516,24 +549,32 @@ void Application::FrustumCullMap()
 	
 	for (u32 i = 0; i < m_mapCells.m_size; ++i)
 	{
-		//m_mapCells.m_data[i]->m_activeLOD = 0;
-		if(m_inputContext->IsKeyHold(miKey::K_1))
-			m_mapCells.m_data[i]->m_activeLOD = 1;
-		if (m_inputContext->IsKeyHold(miKey::K_2))
-			m_mapCells.m_data[i]->m_activeLOD = 2;
-		if (m_inputContext->IsKeyHold(miKey::K_3))
-			m_mapCells.m_data[i]->m_activeLOD = 3;
-		if (m_inputContext->IsKeyHold(miKey::K_4))
-			m_mapCells.m_data[i]->m_activeLOD = 4;
-		if (m_inputContext->IsKeyHold(miKey::K_5))
-			m_mapCells.m_data[i]->m_activeLOD = 5;
-		if (m_inputContext->IsKeyHold(miKey::K_0))
-			m_mapCells.m_data[i]->m_activeLOD = 0;
+		////m_mapCells.m_data[i]->m_activeLOD = 0;
+		//if (m_inputContext->IsKeyHold(miKey::K_1))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 1;
+		//if (m_inputContext->IsKeyHold(miKey::K_2))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 2;
+		//if (m_inputContext->IsKeyHold(miKey::K_3))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 3;
+		//if (m_inputContext->IsKeyHold(miKey::K_4))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 4;
+		//if (m_inputContext->IsKeyHold(miKey::K_5))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 5;
+		//if (m_inputContext->IsKeyHold(miKey::K_0))
+		//	m_mapCells.m_data[i]->m_activeLOD_0 = 0;
+		//
+		//m_mapCells.m_data[i]->m_activeLOD_1 = m_mapCells.m_data[i]->m_activeLOD_0;
+		//m_mapCells.m_data[i]->m_activeLOD_2 = m_mapCells.m_data[i]->m_activeLOD_0;
+		//m_mapCells.m_data[i]->m_activeLOD_3 = m_mapCells.m_data[i]->m_activeLOD_0;
 
 		if (m_activeCamera->m_frust.AABBInFrustum(m_mapCells.m_data[i]->m_aabb, m_mapCells.m_data[i]->m_position))
 		{
-
+			m_mapCells.m_data[i]->m_inView = true;
 			m_visibleMapCells.push_back(m_mapCells.m_data[i]);
+		}
+		else
+		{
+			m_mapCells.m_data[i]->m_inView = false;
 		}
 	}
 }

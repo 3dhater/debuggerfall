@@ -335,6 +335,9 @@ public:
 
 	Player* m_player = 0;
 	void FindCurrentCellID();
+
+	bool m_cameraWasMoved = true;
+	void FindLODs();
 };
 
 #endif
