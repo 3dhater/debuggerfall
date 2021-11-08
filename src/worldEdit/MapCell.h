@@ -1,7 +1,6 @@
 ﻿#ifndef _MAPCELL_H_
 #define _MAPCELL_H_
 
-
 /*
 LOD0 - 50
 LOD1 - 25
@@ -9,7 +8,32 @@ LOD2 - 12
 LOD3 - 8
 LOD4 - 4
 */
-#define MapCellMaxLOD 6
+#define MapCellMaxLOD 3
+
+struct LODsHeader
+{
+	// for CPU mesh
+	u32 m_vBufferSize[MapCellMaxLOD];
+	u32 m_iBufferSize[MapCellMaxLOD];
+	u32 m_vCount[MapCellMaxLOD];
+	u32 m_iCount[MapCellMaxLOD];
+	u32 m_quadNum[MapCellMaxLOD];
+	
+	v3f m_position;
+
+	//Aabb m_aabb; // not transformed
+	//v3f m_positionInWorld[4];
+
+	// size of buffers from all LODs
+	/*u32 m_vBuffersSizeUncompressed = 0;
+	u32 m_iBuffersSizeUncompressed = 0;
+	u32 m_vBuffersSizeCompressed = 0;
+	u32 m_iBuffersSizeCompressed = 0;*/
+
+	u32 m_globalVertexIndexBufferSize_compressed = 0;
+	u32 m_globalVertexIndexBufferSize_uncompressed = 0;
+};
+
 class MapCell
 {
 	//// currentLOD - LOD0, LOD1, LOD2...
@@ -64,7 +88,9 @@ public:
 	bool m_inView = false;
 
 	u32 m_activeLOD[4] = {0,0,0,0};
-	void Generate(miImage*, f32 mapSizeX, f32 mapSizeY);
+	void Generate(u32 ix, u32 iy, std::map<std::string, std::pair<v3f, u32>>& vMap, miImage*, f32 mapSizeX, f32 mapSizeY);
+	void DeleteCPUMesh();
+	//void WriteToFile(u32 x, u32 y);
 };
 
 

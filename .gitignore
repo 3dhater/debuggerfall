@@ -35,3 +35,4 @@ build/worldEdit/Debug
 build/.vs
 *.pdb
 build/worldEdit/Release
+data/

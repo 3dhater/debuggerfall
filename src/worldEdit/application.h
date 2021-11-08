@@ -1,6 +1,16 @@
 ﻿#ifndef _APP_H_
 #define _APP_H_
 
+#include <map>
+#include <string>
+
+template <typename M, typename V>
+void MapToVec(const  M& m, V& v) {
+	for (typename M::const_iterator it = m.begin(); it != m.end(); ++it) {
+		v.push_back(it->second.first);
+	}
+}
+
 class MapCell;
 class Player;
 

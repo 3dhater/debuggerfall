@@ -13,13 +13,15 @@
 
 #include <filesystem>
 
+#include <Windows.h>
+
 #define CommandID_TerrainEditor 1
 
 f32 g_terrainLODDistance_0 = 0.005f;
-f32 g_terrainLODDistance_1 = 0.01f;
-f32 g_terrainLODDistance_2 = 0.015f;
-f32 g_terrainLODDistance_3 = 0.02f;
-f32 g_terrainLODDistance_4 = 0.025f;
+f32 g_terrainLODDistance_1 = 0.02f;
+f32 g_terrainLODDistance_2 = 0.03f;
+f32 g_terrainLODDistance_3 = 0.04f;
+//f32 g_terrainLODDistance_4 = 0.025f;
 
 Application* g_app = nullptr;
 
@@ -316,9 +318,13 @@ void Application::MainLoop()
 			if (m_inputContext->IsKeyHold(miKey::K_D))
 				m_activeCamera->MoveRight(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_E))
+			{
 				m_activeCamera->MoveUp(m_dt);
+			}
 			if (m_inputContext->IsKeyHold(miKey::K_Q))
+			{
 				m_activeCamera->MoveDown(m_dt);
+			}
 
 			
 
@@ -451,51 +457,86 @@ void Application::OpenMap()
 
 void Application::GenerateWorld()
 {
-	miImage* heightMap = miLoadImage(L"../data/world/heightmap.png");
-	if (!heightMap)
-		return;
+	//miImage* heightMap = miLoadImage(L"../data/world/heightmap.png");
+	//if (!heightMap)
+	//	return;
 
-	/*m_testMapCell = new MapCell;
-	m_testMapCell->Generate();*/
-	
-	// Создать ячейки. Записать их в файл.
-	// m_mapCells будет хранить указатели на все ячейки.
+	///*m_testMapCell = new MapCell;
+	//m_testMapCell->Generate();*/
+	//
+	//// Создать ячейки. Записать их в файл.
+	//// m_mapCells будет хранить указатели на все ячейки.
 
-	u32 cellsNumX = 3;
-	u32 cellsNumY = 3;
+	//// 10 = 1km
+	//// 100 = 10km
+	//u32 cellsNumX = 100;
+	//u32 cellsNumY = 100;
 
-	f32 cellSize = 0.01f;// 0.01f = 100m
+	//f32 cellSize = 0.01f;// 0.01f = 100m
 
-	f32 mapSizeX = (f32)cellsNumX * cellSize; 
-	f32 mapSizeY = (f32)cellsNumY * cellSize;
+	//f32 mapSizeX = (f32)cellsNumX * cellSize; 
+	//f32 mapSizeY = (f32)cellsNumY * cellSize;
 
-	f32 mapSizeHalfX = mapSizeX * 0.5f;
-	f32 mapSizeHalfY = mapSizeY * 0.5f;
+	//f32 mapSizeHalfX = mapSizeX * 0.5f;
+	//f32 mapSizeHalfY = mapSizeY * 0.5f;
 
-	v3f position;
-	position.x = -mapSizeHalfX;
-	position.z = -mapSizeHalfY;
+	//v3f position;
+	//position.x = -mapSizeHalfX;
+	//position.z = -mapSizeHalfY;
 
-	for (u32 iy = 0; iy < cellsNumY; ++iy)
-	{
-		for (u32 ix = 0; ix < cellsNumX; ++ix)
-		{
-			MapCell* newCell = new MapCell;
-			newCell->m_position = position;
-			newCell->Generate(heightMap, mapSizeX, mapSizeY);
+	//std::map<std::string, std::pair<v3f, u32>> vMap;
 
+	//for (u32 iy = 0; iy < cellsNumY; ++iy)
+	//{
+	//	for (u32 ix = 0; ix < cellsNumX; ++ix)
+	//	{
+	//		printf("%u %u\n", iy, ix);
 
-			m_mapCells.push_back(newCell);
-			newCell->m_id = m_mapCells.size();
+	//		MapCell* newCell = new MapCell;
+	//		newCell->m_position = position;
+	//		newCell->Generate(ix, iy, vMap, heightMap, mapSizeX, mapSizeY);
 
-			position.x += cellSize;
-		}
-	
-		position.x = -mapSizeHalfX;
-		position.z += cellSize;
-	}
+	//		m_mapCells.push_back(newCell);
+	//		newCell->m_id = m_mapCells.size();
 
-	miDestroy(heightMap);
+	//		//////
+	//		//newCell->WriteToFile(ix, iy);
+	//		newCell->DeleteCPUMesh();
+
+	//		position.x += cellSize;
+	//	}
+	//
+	//	position.x = -mapSizeHalfX;
+	//	position.z += cellSize;
+	//}
+	//printf("MAP SIZE: %u\n", vMap.size());
+
+	//std::vector<v3f> vArray;
+	//MapToVec(vMap, vArray);
+	//
+	//{
+	//	miStringA str;
+	//	str += "../data/world/vertices.bin";
+
+	//	FILE* f = fopen(str.data(), "wb");
+
+	//	if (vArray.size())
+	//	{
+	//		u32 uncompSize = vArray.size() * sizeof(v3f);
+	//	//	fwrite(vArray.data(), vArray.size() * sizeof(v3f), 1, f);
+	//		auto compressBound = miGetCompressBound(uncompSize);
+	//		u8* compBuf = (u8*)malloc(compressBound);
+	//		u32 srcSize = uncompSize;
+	//		u32 compSize = compressBound;
+	//		miCompress(vArray.data(), srcSize, compBuf, &compSize, miCompressAlgorithm::Deflate, miCompressStrategy::Default);
+	//		fwrite(compBuf, compSize, 1, f);
+	//		free(compBuf);
+	//	}
+
+	//	fclose(f);
+	//}
+
+	//miDestroy(heightMap);
 }
 
 void Application::ReadWorld()
@@ -535,10 +576,10 @@ void Application::FindLODs()
 
 			if (d < g_terrainLODDistance_0)        cell->m_activeLOD[k] = 0;
 			else if (d < g_terrainLODDistance_1)   cell->m_activeLOD[k] = 1;
-			else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
-			else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
-			else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
-			else cell->m_activeLOD[k] = 5;
+			//else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
+			//else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
+			//else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
+			else cell->m_activeLOD[k] = 2;
 		}
 	}
 }
