@@ -1,5 +1,36 @@
-﻿#ifndef _MAPCELL_H_
+﻿/*
+  Copyright (C) 2021 Basov Artyom
+  The authors can be contacted at <artembasov@outlook.com>
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  1. Redistributions of source code must retain the above copyright
+	 notice, this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright
+	 notice, this list of conditions and the following disclaimer in
+	 the documentation and/or other materials provided with the
+	 distribution.
+  3. The names of the authors may not be used to endorse or promote
+	 products derived from this software without specific prior
+	 written permission.
+  THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
+  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef _MAPCELL_H_
 #define _MAPCELL_H_
+
+#include <map>
+#include <string>
 
 /*
 LOD0 - 50
@@ -8,30 +39,37 @@ LOD2 - 12
 LOD3 - 8
 LOD4 - 4
 */
-#define MapCellMaxLOD 3
+#define MapCellMaxLOD 2
 
-struct LODsHeader
+struct TerrainVertex
+{
+	TerrainVertex() {}
+	TerrainVertex(
+		const v3f& position,
+		const v3f& normal,
+		const v2f& uv1, 
+		const v2f& uv2) 
+	:
+		m_position(position),
+		m_normal(normal),
+		m_uv1(uv1),
+		m_uv2(uv2)
+	{}
+
+	v3f m_position;
+	v3f m_normal;
+	v2f m_uv1;
+	v2f m_uv2;
+};
+
+struct LODHeader
 {
 	// for CPU mesh
-	u32 m_vBufferSize[MapCellMaxLOD];
-	u32 m_iBufferSize[MapCellMaxLOD];
-	u32 m_vCount[MapCellMaxLOD];
-	u32 m_iCount[MapCellMaxLOD];
-	u32 m_quadNum[MapCellMaxLOD];
+	u32 m_vCount = 0;
+	u32 m_iCount = 0;
 	
-	v3f m_position;
-
-	//Aabb m_aabb; // not transformed
-	//v3f m_positionInWorld[4];
-
-	// size of buffers from all LODs
-	/*u32 m_vBuffersSizeUncompressed = 0;
-	u32 m_iBuffersSizeUncompressed = 0;
-	u32 m_vBuffersSizeCompressed = 0;
-	u32 m_iBuffersSizeCompressed = 0;*/
-
-	u32 m_globalVertexIndexBufferSize_compressed = 0;
-	u32 m_globalVertexIndexBufferSize_uncompressed = 0;
+	u32 m_compressedSize = 0;
+	u32 m_uncompressedSize = 0;
 };
 
 class MapCell

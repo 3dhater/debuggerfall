@@ -36,3 +36,5 @@ build/.vs
 *.pdb
 build/worldEdit/Release
 data/
+build/generators/Debug
+build/generators/Release

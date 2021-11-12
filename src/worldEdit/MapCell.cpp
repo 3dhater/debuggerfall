@@ -442,7 +442,7 @@ void MapCell::Generate(
 	////fwrite(iArray.m_data, head.m_iBuffersSizeUncompressed, 1, f);
 	//fwrite(compBufV, head.m_vBuffersSizeCompressed, 1, f);
 	//fwrite(compBufI, head.m_iBuffersSizeCompressed, 1, f);
-
+	
 	//free(compBufV);
 	//free(compBufI);
 
