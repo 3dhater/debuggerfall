@@ -166,9 +166,12 @@ void gen_regions()
 			str += ".";
 			str += ix;
 			str += ".dpk";
+
+			if (std::filesystem::exists(str.data()))
+				std::filesystem::remove(str.data());
 	
 			dpk_file dpk;
-			dpk_init(&dpk);
+			memset(&dpk, 0, sizeof(dpk_file));
 
 			auto res = dpk_open(str.data(), &dpk);
 			if (res == DPK_ER_OK)
@@ -191,7 +194,32 @@ void gen_regions()
 			}
 		}
 	}
-	
+}
+
+void print_dpk(const char* fileName)
+{
+	dpk_file dpk;
+	memset(&dpk, 0, sizeof(dpk_file));
+
+	auto res = dpk_open(fileName, &dpk);
+	if (res == DPK_ER_OK)
+	{
+		printf("DPK file name: %s\n", dpk.file_name);
+		printf("DPK file version: %i\n", dpk.header.version);		
+		printf("DPK data num: %i\n", dpk.header.data_num);
+		
+		dpk_data_node* curr = dpk.data;
+		dpk_data_node* last = dpk.data->left;
+		while (true)
+		{
+			printf("\t-data: %s, size: %i\n", curr->header.name, curr->header.comp_size);
+			
+			if (curr == last)
+				break;
+			curr = curr->right;
+		}
+		dpk_close(&dpk);
+	}
 }
 
 int main(int argc, char* argv[])
@@ -200,6 +228,7 @@ int main(int argc, char* argv[])
 	//printf("\"-gen_basic_cells\" - create 10'00x10'00 cells. It will erase old cells.\n");
 	//printf("\"-gen_cells_masks\" - create mask/PNG files for each cell.\n");
 	printf("\"-gen_regions\" - create regions.\n");
+	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
 	printf("\n");
 
 	miInputContext* m_inputContext = nullptr;
@@ -211,19 +240,14 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < argc; ++i)
 	{
-		/*if (strcmp(argv[i], "-vid") == 0)
+		if (strcmp(argv[i], "-print_dpk") == 0)
 		{
 			++i;
 			if (i < argc)
-			{
-				videoDriverTypeStr = argv[i];
-			}
-		}*/
-
-		if (strcmp(argv[i], "-gen_regions") == 0)
-		{
-			gen_regions();
+				print_dpk(argv[i]);
 		}
+		else if (strcmp(argv[i], "-gen_regions") == 0)
+			gen_regions();
 
 		/*if (strcmp(argv[i], "-gen_basic_cells") == 0)
 		{
