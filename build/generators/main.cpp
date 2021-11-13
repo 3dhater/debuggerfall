@@ -82,10 +82,10 @@ void* create_new_cell(size_t* out_size)
 	m_header.m_vCount = 4;
 	m_header.m_iCount = 6;
 
-	pos[0].set(-0.05f, 0.f, -0.05f);
-	pos[1].set(-0.05f, 0.f, 0.05f);
-	pos[2].set(0.05f, 0.f, 0.05f);
-	pos[3].set(0.05f, 0.f, -0.05f);
+	pos[0].set(-0.01f, 0.f, -0.01f);
+	pos[1].set(-0.01f, 0.f, 0.01f);
+	pos[2].set(0.01f, 0.f, 0.01f);
+	pos[3].set(0.01f, 0.f, -0.01f);
 
 	vertices[0] = TerrainVertex(pos[0], v3f(0.f, 1.f, 0.f), v2f(0.f, 0.f), v2f());
 	vertices[1] = TerrainVertex(pos[1], v3f(0.f, 1.f, 0.f), v2f(0.f, 1.f), v2f());
@@ -169,20 +169,34 @@ void gen_regions()
 
 			if (std::filesystem::exists(str.data()))
 				std::filesystem::remove(str.data());
-	
 			dpk_file dpk;
 			memset(&dpk, 0, sizeof(dpk_file));
 
 			auto res = dpk_open(str.data(), &dpk);
 			if (res == DPK_ER_OK)
 			{
+				printf("Create region %i.%i\n", iy, ix);
 
-				size_t newCellSize = 0;
-				auto newCell = create_new_cell(&newCellSize);
-				if (newCell)
+				for (int i1 = 0; i1 < 500; ++i1)
 				{
-					dpk_add_data(&dpk, newCell, newCellSize, newCellSize, DPK_CMP_NOCOMPRESS, "0.cll");
-					free(newCell);
+					for (int i2 = 0; i2 < 500; ++i2)
+					{
+
+							size_t newCellSize = 0;
+							auto newCell = create_new_cell(&newCellSize);
+							if (newCell)
+							{
+								miStringA n;
+								n += i1;
+								n += ".";
+								n += i2;
+								n += ".c";
+
+								dpk_add_data(&dpk, newCell, newCellSize, newCellSize, DPK_CMP_NOCOMPRESS, n.data());
+								free(newCell);
+							}
+
+					}
 				}
 
 				res = dpk_save(&dpk);
