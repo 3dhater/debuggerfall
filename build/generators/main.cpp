@@ -156,6 +156,10 @@ void* create_new_cell(size_t* out_size)
 
 void gen_regions()
 {
+	miImage image;
+	image.create(400, 400);
+	image.fill(ColorBlack);
+
 	for (u32 iy = 0; iy < 10; ++iy)
 	{
 		for (u32 ix = 0; ix < 10; ++ix)
@@ -190,9 +194,16 @@ void gen_regions()
 								n += i1;
 								n += ".";
 								n += i2;
-								n += ".c";
-
+								n += ".c0";
 								dpk_add_data(&dpk, newCell, newCellSize, newCellSize, DPK_CMP_NOCOMPRESS, n.data());
+
+								n.clear();
+								n += i1;
+								n += ".";
+								n += i2;
+								n += ".c1";
+								dpk_add_data(&dpk, newCell, newCellSize, newCellSize, DPK_CMP_NOCOMPRESS, n.data());
+
 								free(newCell);
 							}
 
@@ -271,7 +282,7 @@ int main(int argc, char* argv[])
 		{
 			gen_cells_masks();
 		}*/
-
+		char x = 'z';
 
 	}
 
