@@ -140,26 +140,27 @@ Application::Application()
 
 Application::~Application()
 {
+	if (m_file_gen)
+		fclose(m_file_gen);
+	
 	if (m_player) 
 		delete m_player;
-	for (u32 i = 0; i < m_mapCells.m_size; ++i)
+	/*for (u32 i = 0; i < m_mapCells.m_size; ++i)
 	{
 		delete m_mapCells.m_data[i];
-	}
-	if (m_testMapCell)
-		delete m_testMapCell;
+	}*/
+	//if (m_testMapCell)
+	//	delete m_testMapCell;
 
 	if (m_GUI)
 		delete m_GUI;
-	if (m_cameraFly)
-		delete m_cameraFly;
 	if (m_libContext)
 		miDestroy(m_libContext);
 	if (m_inputContext)
 		miDestroy(m_inputContext);
 }
 
-void Application::OnCreate(const char* videoDriver)
+bool Application::OnCreate(const char* videoDriver)
 {
 	{
 		FILE* logFile = fopen("log.txt", "w");
@@ -167,11 +168,23 @@ void Application::OnCreate(const char* videoDriver)
 			fclose(logFile);
 	}
 
+
 	miLogSetErrorOutput(log_onError);
 	miLogSetWarningOutput(log_onWarning);
 	miLogSetInfoOutput(log_onInfo);
 
 	
+	m_file_gen = fopen("../data/world/gen.dpk", "rb");
+	if (!m_file_gen)
+	{
+		miLogWriteError("cant open gen.dpk\n");
+		return false;
+	}
+	
+	for (int i = 0; i < 9; ++i)
+	{
+		m_mapCells.push_back(new MapCell);
+	}
 
 	m_inputContext = miCreate<miInputContext>();
 	m_libContext = miCreate<miLibContext>();
@@ -209,7 +222,7 @@ void Application::OnCreate(const char* videoDriver)
 			}
 		}
 		MI_PRINT_FAILED;
-		throw std::exception("Failed to init video driver");
+		return false;
 	}
 
 vidOk:
@@ -219,17 +232,7 @@ vidOk:
 	m_gpu->GetDepthRange(&m_gpuDepthRange);
 	//m_gpu->UseVSync(false);
 
-	m_cameraFly = new FlyCamera;
-	m_cameraFly->m_localPosition.set(0.f, 0.0002f, 0.f, 0.f);
-	m_cameraFly->m_near = 0.00001000f;
-	m_cameraFly->m_far = 100.f;
-	m_cameraFly->m_moveSpeedDefault = 0.0001f;
-	{
-		Mat4 lookAt;
-		math::makeLookAtRHMatrix(lookAt, m_cameraFly->m_localPosition, v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 1.f, 0.f, 0.f));
-		m_cameraFly->m_rotationMatrix.setBasis(lookAt);
-	}
-	m_activeCamera = m_cameraFly;
+	
 
 	m_GUI = new ApplicationGUI;
 	m_GUI->Init();
@@ -268,8 +271,12 @@ vidOk:
 
 	m_player = new Player;
 
-	OpenMap();
+	m_activeCamera = m_player->m_cameraFly;
 
+	if (!OpenMap())
+		return false;
+
+	return true;
 }
 
 void Application::MainLoop()
@@ -280,6 +287,9 @@ void Application::MainLoop()
 	miEvent currentEvent;
 	while (miRun(&m_dt))
 	{
+
+		if (m_needUpdateMapCell)
+			_updateMapCell();
 
 		bool isSpace = m_inputContext->IsKeyHold(miKey::K_SPACE);
 
@@ -333,27 +343,27 @@ void Application::MainLoop()
 		if (isSpace)
 		{
 			m_cameraWasMoved = true;
-			m_activeCamera->Rotate(m_inputContext->m_mouseDelta, m_dt);
+			m_player->m_cameraFly->Rotate(m_inputContext->m_mouseDelta, m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_LSHIFT) || m_inputContext->IsKeyHold(miKey::K_RSHIFT))
-				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault * 50.f;
+				m_player->m_cameraFly->m_moveSpeed = 100.f;
 			else
-				m_activeCamera->m_moveSpeed = m_activeCamera->m_moveSpeedDefault;
+				m_player->m_cameraFly->m_moveSpeed = m_player->m_cameraFly->m_moveSpeedDefault;
 
 			if (m_inputContext->IsKeyHold(miKey::K_W))
-				m_activeCamera->MoveForward(m_dt);
+				m_player->MoveForward(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_S))
-				m_activeCamera->MoveBackward(m_dt);
+				m_player->MoveBackward(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_A))
-				m_activeCamera->MoveLeft(m_dt);
+				m_player->MoveLeft(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_D))
-				m_activeCamera->MoveRight(m_dt);
+				m_player->MoveRight(m_dt);
 			if (m_inputContext->IsKeyHold(miKey::K_E))
 			{
-				m_activeCamera->MoveUp(m_dt);
+				m_player->MoveUp(m_dt);
 			}
 			if (m_inputContext->IsKeyHold(miKey::K_Q))
 			{
-				m_activeCamera->MoveDown(m_dt);
+				m_player->MoveDown(m_dt);
 			}
 
 			
@@ -367,7 +377,7 @@ void Application::MainLoop()
 			miSetCursorPosition(cursorX, cursorY, m_mainWindow);
 		}
 
-		FindCurrentCellID();
+	//	FindCurrentCellID();
 
 		if (m_cameraWasMoved)
 		{
@@ -420,15 +430,15 @@ void Application::MainLoop()
 			default_polygon_material.m_sunPos = v4f(0.f, 10.f, 0.f, 0.f);
 			default_polygon_material.m_wireframe = true;
 			miSetMaterial(&default_polygon_material);
-			if (m_testMapCell)
-			{
-				DrawMapCell(m_testMapCell);
-			}
+		//	if (m_testMapCell)
+		//	{
+		//		DrawMapCell(m_testMapCell);
+		//	}
 
-			for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
+		/*	for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
 			{
 				DrawMapCell(m_visibleMapCells.m_data[i]);
-			}
+			}*/
 
 			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(-1.f, 0.f, 0.f, 0.f), ColorRed);
 			m_gpu->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, -1.f, 0.f), ColorLime);
@@ -473,7 +483,7 @@ void Application::ShowGUITab(u32 id)
 	}
 }
 
-void Application::OpenMap()
+bool Application::OpenMap()
 {
 	if (std::filesystem::exists("../data/world.dat"))
 	{
@@ -483,6 +493,8 @@ void Application::OpenMap()
 	{
 		GenerateWorld();
 	}
+
+	return true;
 }
 
 void Application::GenerateWorld()
@@ -576,103 +588,128 @@ void Application::ReadWorld()
 
 void Application::DrawMapCell(MapCell* cell)
 {
-	Mat4 W;
-	W.setTranslation(cell->m_position);
+	//Mat4 W;
+	//W.setTranslation(cell->m_position);
 
-	miSetMatrix(miMatrixType::World, &W);
+	//miSetMatrix(miMatrixType::World, &W);
 
-	Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
-	miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
-	m_gpu->SetTexture(0, miGetBlackTexture());
-	m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD[0]]);
-	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD[1]]);
-	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD[2]]);
-	m_gpu->Draw();
-	m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD[3]]);
-	m_gpu->Draw();
+	//Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
+	//miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
+	//m_gpu->SetTexture(0, miGetBlackTexture());
+	//m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD[0]]);
+	//m_gpu->Draw();
+	//m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD[1]]);
+	//m_gpu->Draw();
+	//m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD[2]]);
+	//m_gpu->Draw();
+	//m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD[3]]);
+	//m_gpu->Draw();
 }
 
 void Application::FindLODs()
 {
-	for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
-	{
-		auto cell = m_visibleMapCells.m_data[i];
-		
-		for (u32 k = 0; k < 4; ++k)
-		{
-			f32 d = cell->m_positionInWorld[k].distance(m_activeCamera->m_localPosition);
+	//for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
+	//{
+	//	auto cell = m_visibleMapCells.m_data[i];
+	//	
+	//	for (u32 k = 0; k < 4; ++k)
+	//	{
+	//		f32 d = cell->m_data->m_positionInWorld[k].distance(m_activeCamera->m_localPosition);
 
-			if (d < g_terrainLODDistance_0)        cell->m_activeLOD[k] = 0;
-			else if (d < g_terrainLODDistance_1)   cell->m_activeLOD[k] = 1;
-			//else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
-			//else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
-			//else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
-			else cell->m_activeLOD[k] = 2;
-		}
-	}
+	//		if (d < g_terrainLODDistance_0)        cell->m_data->m_activeLOD[k] = 0;
+	//		else if (d < g_terrainLODDistance_1)   cell->m_data->m_activeLOD[k] = 1;
+	//		//else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
+	//		//else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
+	//		//else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
+	//		else cell->m_data->m_activeLOD[k] = 2;
+	//	}
+	//}
 }
 
 void Application::FrustumCullMap()
 {
-	m_visibleMapCells.clear();
-	
-	for (u32 i = 0; i < m_mapCells.m_size; ++i)
-	{
-		////m_mapCells.m_data[i]->m_activeLOD = 0;
-		//if (m_inputContext->IsKeyHold(miKey::K_1))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 1;
-		//if (m_inputContext->IsKeyHold(miKey::K_2))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 2;
-		//if (m_inputContext->IsKeyHold(miKey::K_3))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 3;
-		//if (m_inputContext->IsKeyHold(miKey::K_4))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 4;
-		//if (m_inputContext->IsKeyHold(miKey::K_5))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 5;
-		//if (m_inputContext->IsKeyHold(miKey::K_0))
-		//	m_mapCells.m_data[i]->m_activeLOD_0 = 0;
-		//
-		//m_mapCells.m_data[i]->m_activeLOD_1 = m_mapCells.m_data[i]->m_activeLOD_0;
-		//m_mapCells.m_data[i]->m_activeLOD_2 = m_mapCells.m_data[i]->m_activeLOD_0;
-		//m_mapCells.m_data[i]->m_activeLOD_3 = m_mapCells.m_data[i]->m_activeLOD_0;
+	//m_visibleMapCells.clear();
+	//
+	//for (u32 i = 0; i < m_mapCells.m_size; ++i)
+	//{
+	//	////m_mapCells.m_data[i]->m_activeLOD = 0;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_1))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 1;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_2))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 2;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_3))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 3;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_4))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 4;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_5))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 5;
+	//	//if (m_inputContext->IsKeyHold(miKey::K_0))
+	//	//	m_mapCells.m_data[i]->m_activeLOD_0 = 0;
+	//	//
+	//	//m_mapCells.m_data[i]->m_activeLOD_1 = m_mapCells.m_data[i]->m_activeLOD_0;
+	//	//m_mapCells.m_data[i]->m_activeLOD_2 = m_mapCells.m_data[i]->m_activeLOD_0;
+	//	//m_mapCells.m_data[i]->m_activeLOD_3 = m_mapCells.m_data[i]->m_activeLOD_0;
 
-		if (m_activeCamera->m_frust.AABBInFrustum(m_mapCells.m_data[i]->m_aabb, m_mapCells.m_data[i]->m_position))
-		{
-			m_mapCells.m_data[i]->m_inView = true;
-			m_visibleMapCells.push_back(m_mapCells.m_data[i]);
-		}
-		else
-		{
-			m_mapCells.m_data[i]->m_inView = false;
-		}
-	}
+	//	if (m_activeCamera->m_frust.AABBInFrustum(m_mapCells.m_data[i]->m_data->m_aabb, m_mapCells.m_data[i]->m_data->m_position))
+	//	{
+	//		m_mapCells.m_data[i]->m_data->m_inView = true;
+	//		m_visibleMapCells.push_back(m_mapCells.m_data[i]);
+	//	}
+	//	else
+	//	{
+	//		m_mapCells.m_data[i]->m_data->m_inView = false;
+	//	}
+	//}
 }
 
-void Application::FindCurrentCellID()
-{
-	m_player->m_cellID = -1;
-	for (u32 i = 0; i < m_mapCells.m_size; ++i)
-	{
-		if (m_activeCamera->m_localPosition.x < m_mapCells.m_data[i]->m_aabbTransformed.m_min.x)
-			continue;
-		if (m_activeCamera->m_localPosition.x > m_mapCells.m_data[i]->m_aabbTransformed.m_max.x)
-			continue;
-		if (m_activeCamera->m_localPosition.z < m_mapCells.m_data[i]->m_aabbTransformed.m_min.z)
-			continue;
-		if (m_activeCamera->m_localPosition.z > m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
-			continue;
+//void Application::FindCurrentCellID()
+//{
+//	m_player->m_cellID = -1;
+//	//for (u32 i = 0; i < m_mapCells.m_size; ++i)
+//	//{
+//	//	if (m_activeCamera->m_localPosition.x < m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_min.x)
+//	//		continue;
+//	//	if (m_activeCamera->m_localPosition.x > m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_max.x)
+//	//		continue;
+//	//	if (m_activeCamera->m_localPosition.z < m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_min.z)
+//	//		continue;
+//	//	if (m_activeCamera->m_localPosition.z > m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_max.z)
+//	//		continue;
+//
+//	//	/*if (m_activeCamera->m_localPosition.x >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.x
+//	//		&& m_activeCamera->m_localPosition.x <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.x
+//	//		&& m_activeCamera->m_localPosition.z >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.z
+//	//		&& m_activeCamera->m_localPosition.z <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
+//	//	{
+//	//		m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
+//	//		return;
+//	//	}*/
+//	//	m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_data->m_id;
+//	//	return;
+//	//}
+//}
 
-		/*if (m_activeCamera->m_localPosition.x >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.x
-			&& m_activeCamera->m_localPosition.x <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.x
-			&& m_activeCamera->m_localPosition.z >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.z
-			&& m_activeCamera->m_localPosition.z <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
-		{
-			m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
-			return;
-		}*/
-		m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
-		return;
+void Application::_updateMapCell()
+{
+	m_needUpdateMapCell = false;
+
+	// 1.f = 1km
+	f64 map_size_x = 1000.0;
+	f64 map_size_y = 1000.0;
+
+	f64 map_half_size_x = map_size_x * 0.5;
+	f64 map_half_size_y = map_size_y * 0.5;
+
+	f64 pos_x = (f64)m_player->m_position.x + map_half_size_x;
+	f64 pos_y = (f64)m_player->m_position.y + map_half_size_y;
+
+	s32 x = 0;
+	s32 y = 0;
+
+	if (pos_x > 0.0)
+	{
+		x = (s32)std::ceil(pos_x);
 	}
+
+	m_player->m_cellID = x;
 }

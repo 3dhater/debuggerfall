@@ -38,6 +38,10 @@
 /*
 	Debuggerfall Pack
 
+    Designed to store a huge amount of files.
+    It is not recommended to unpack everything into a directory.
+    Better to create an editor for inserting or removing data.
+
     Modifying file: read all data in memory, rewrite all file.
 
     File structure:
@@ -104,16 +108,16 @@ extern "C" {
 void dpk_close(dpk_file* dpk);
 
 /* Add data to dpk.
-* dpk - dpk_file structure
-* data - file data
-* uncomp_size - uncompressed size
-* comp_size - compressed size or uncompressed size. This us 'void* data' size.
+* dpk - dpk_file structure.
+* data - file data.
+* uncomp_size - uncompressed size. 
+* comp_size - compressed size or uncompressed size. This is 'void* data' size.
 * compression - compression type. Just for information, implement compression by yourself. 
 *               See DPK_CMP_ for values.
 * name - unique name with maximum DPK_DATANAMESIZE chars (can be without \0).
 *        Check unique name by yourself.
 * 
-* If compression == DPK_CMP_NOCOMPRESS then comp_size must be == uncomp_size
+* If compression == DPK_CMP_NOCOMPRESS then comp_size must be == uncomp_size.
 * For saving you need to call dpk_save
 */
 int dpk_add_data(dpk_file* dpk, void* data, int uncomp_size, int comp_size, unsigned char compression, const char* name);

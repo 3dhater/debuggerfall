@@ -32,14 +32,12 @@
 #include <map>
 #include <string>
 
-/*
-LOD0 - 50
-LOD1 - 25
-LOD2 - 12
-LOD3 - 8
-LOD4 - 4
-*/
-#define MapCellMaxLOD 2
+struct TerrainGenInfo
+{
+	int type;
+	int flags;
+	int data[8];
+};
 
 struct TerrainVertex
 {
@@ -62,26 +60,12 @@ struct TerrainVertex
 	v2f m_uv2;
 };
 
-struct LODHeader
-{
-	// for CPU mesh
-	u32 m_vCount = 0;
-	u32 m_iCount = 0;
-	
-	u32 m_compressedSize = 0;
-	u32 m_uncompressedSize = 0;
-};
-
 class MapCell
 {
-	//// currentLOD - LOD0, LOD1, LOD2...
-	//void GenerateLOD(u32 lodID);
 public:
 	MapCell();
 	~MapCell();
 	
-	//void GenerateLODs();
-
 	struct Quad
 	{
 		v3f m_v1;
@@ -107,28 +91,21 @@ public:
 		}
 	};
 
-	miGPUMesh* m_meshGPU0[MapCellMaxLOD];
-	miGPUMesh* m_meshGPU1[MapCellMaxLOD];
-	miGPUMesh* m_meshGPU2[MapCellMaxLOD];
-	miGPUMesh* m_meshGPU3[MapCellMaxLOD];
+	miGPUMesh* m_meshGPU0[16]; // 4x4
+	miGPUMesh* m_meshGPU1[16];
 	v3f m_position;
-
-	miMesh* m_meshCPU0[MapCellMaxLOD];
-	miMesh* m_meshCPU1[MapCellMaxLOD];
-	miMesh* m_meshCPU2[MapCellMaxLOD];
-	miMesh* m_meshCPU3[MapCellMaxLOD];
 
 	Aabb m_aabb;
 	Aabb m_aabbTransformed;
-	v3f m_positionInWorld[4];
+	v3f m_positionInWorld[16];
 
 	u32 m_id = 0;
 	bool m_inView = false;
 
-	u32 m_activeLOD[4] = {0,0,0,0};
-	void Generate(u32 ix, u32 iy, std::map<std::string, std::pair<v3f, u32>>& vMap, miImage*, f32 mapSizeX, f32 mapSizeY);
-	void DeleteCPUMesh();
-	//void WriteToFile(u32 x, u32 y);
+	// -1 - not visible
+	// 0 - lod0
+	// 1 - lod1
+	s32 m_activeLOD[16];
 };
 
 

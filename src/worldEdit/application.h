@@ -312,6 +312,7 @@ public:
 	}
 };
 
+
 class Application
 {
 public:
@@ -325,26 +326,32 @@ public:
 	miVideoDriver* m_gpu = nullptr;
 	v2f m_gpuDepthRange;
 	FlyCamera* m_activeCamera = 0;
-	FlyCamera* m_cameraFly = 0;
 	ApplicationGUI* m_GUI = 0;
 
-	void OnCreate(const char*);
+	FILE* m_file_gen = 0;
+
+
+	bool OnCreate(const char*);
 	void MainLoop();
 	void WriteLog(const char* message);
 	miPopup* ShowPopup();
 	void ShowGUITab(u32);
-	void OpenMap();
+	bool OpenMap();
 	void GenerateWorld();
 	void ReadWorld();
 
-	MapCell* m_testMapCell = 0;
+	// need to find cell ID for player, and init cell
+	bool m_needUpdateMapCell = true;
+	void _updateMapCell();
+
+	//MapCell* m_testMapCell = 0;
 	miArray<MapCell*> m_mapCells;
-	miArray<MapCell*> m_visibleMapCells;
+	//miArray<MapCell*> m_visibleMapCells;
 	void DrawMapCell(MapCell*);
 	void FrustumCullMap();
 
 	Player* m_player = 0;
-	void FindCurrentCellID();
+	//void FindCurrentCellID();
 
 	bool m_cameraWasMoved = true;
 	void FindLODs();

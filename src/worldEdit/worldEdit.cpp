@@ -21,14 +21,9 @@ int main(int argc, char* argv[])
 	}
 
 	Application* app = new Application;
-	try
+	if (app->OnCreate(videoDriverTypeStr.data()))
 	{
-		app->OnCreate(videoDriverTypeStr.data());
 		app->MainLoop();
-	}
-	catch (const std::exception& e)
-	{
-		miLogWriteError("Exception: %s\n", e.what());
 	}
 
 	delete app;
