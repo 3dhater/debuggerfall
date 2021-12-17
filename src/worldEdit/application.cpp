@@ -140,8 +140,8 @@ Application::Application()
 
 Application::~Application()
 {
-	if (m_file_gen)
-		fclose(m_file_gen);
+	if (m_file_gen) fclose(m_file_gen);
+	if (m_file_ids) fclose(m_file_ids);
 	
 	if (m_player) 
 		delete m_player;
@@ -178,6 +178,13 @@ bool Application::OnCreate(const char* videoDriver)
 	if (!m_file_gen)
 	{
 		miLogWriteError("cant open gen.dpk\n");
+		return false;
+	}
+
+	m_file_ids = fopen("../data/world/ids.bin", "rb");
+	if (!m_file_ids)
+	{
+		miLogWriteError("cant open ids.bin\n");
 		return false;
 	}
 	
@@ -440,8 +447,8 @@ void Application::MainLoop()
 				DrawMapCell(m_visibleMapCells.m_data[i]);
 			}*/
 
-			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(-1.f, 0.f, 0.f, 0.f), ColorRed);
-			m_gpu->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, -1.f, 0.f), ColorLime);
+			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed);
+			m_gpu->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime);
 
 			m_gpu->BeginDrawGUI();
 			m_GUI->m_context->DrawAll();
@@ -701,15 +708,77 @@ void Application::_updateMapCell()
 	f64 map_half_size_y = map_size_y * 0.5;
 
 	f64 pos_x = (f64)m_player->m_position.x + map_half_size_x;
-	f64 pos_y = (f64)m_player->m_position.y + map_half_size_y;
+	f64 pos_y = (f64)m_player->m_position.z + map_half_size_y;
 
 	s32 x = 0;
 	s32 y = 0;
 
 	if (pos_x > 0.0)
-	{
 		x = (s32)std::ceil(pos_x);
-	}
 
-	m_player->m_cellID = x;
+	if (pos_y > 0.0)
+		y = (s32)std::ceil(pos_y);
+
+	s32 real_x = x;
+	s32 real_y = y;
+
+	if (x > 999) x = 999;
+	if (y > 999) y = 999;
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+
+	m_player->m_cellID = (y * 1000) + x;
+
+	static s32 prev_ID = -1;
+
+	if (m_player->m_cellID != prev_ID)
+	{
+		/*
+		* [3][4][5]
+		* [1][0][2]
+		* [6][7][8]
+		*/
+		s32 newIDs[9];
+
+		fseek(m_file_ids, m_player->m_cellID * (9*sizeof(s32)), SEEK_SET);
+		fread(&newIDs[0], sizeof(s32) * 9, 1, m_file_ids);
+		/*printf("%i %i %i\n%i %i %i\n%i %i %i\n\n",
+			newIDs[5], newIDs[4], newIDs[3],
+			newIDs[2], newIDs[0], newIDs[1],
+			newIDs[8], newIDs[7], newIDs[6]);*/
+
+		/*
+		* Сначала прохожусь по массиву с ячейками.
+		*  Беру m_id и если он не равен -1 проверяю с массивом newIDs
+		*  Если не найдено значит нужно очистить ячейку и сделать m_id = -1
+		* Далее прохожусь по newIDs.
+		*  Беру значение, если оно не -1 то прохожусь по массиву с ячейками.
+		*   Беру ячейку, если m_id равен -1 то инициализирую эту ячейку новыми
+		*    данными и присваиваю новый m_id
+		*/
+		for (s32 i = 0; i < 9; ++i)
+		{
+			if (m_mapCells.m_data[i]->m_id != -1)
+			{
+				bool found = false;
+				for (s32 i2 = 0; i2 < 9; ++i2)
+				{
+					if (newIDs[i2] == m_mapCells.m_data[i]->m_id)
+					{
+						found = true;
+						break;
+					}
+				}
+				if(!found)
+					m_mapCells.m_data[i]->Clear();
+			}
+		}
+		
+		for (s32 i = 0; i < 9; ++i)
+		{
+
+		}
+
+		prev_ID = m_player->m_cellID;
+	}
 }

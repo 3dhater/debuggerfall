@@ -283,6 +283,64 @@ void print_dpk(const char* fileName)
 	}
 }
 
+void create_cells_ids()
+{
+	FILE* f = fopen("../data/world/ids.bin", "wb");
+	if (f)
+	{
+		int ids[9];
+		int id = 0;
+		for (int y = 0; y < 1000; ++y)
+		{
+			for (int x = 0; x < 1000; ++x)
+			{
+				ids[0] = id;
+				ids[1] = ids[0] + 1;
+				ids[2] = ids[0] - 1;
+
+				ids[3] = ids[0] + 1000 + 1;
+				ids[4] = ids[3] - 1;
+				ids[5] = ids[4] - 1;
+
+				ids[6] = ids[0] - 1000 + 1;
+				ids[7] = ids[6] - 1;
+				ids[8] = ids[7] - 1;
+
+				if (x == 0)
+				{
+					ids[5] = -1;
+					ids[2] = -1;
+					ids[8] = -1;
+				}
+				else if (x == 999)
+				{
+					ids[3] = -1;
+					ids[1] = -1;
+					ids[6] = -1;
+				}
+
+				if (y == 0)
+				{
+					ids[6] = -1;
+					ids[7] = -1;
+					ids[8] = -1;
+				}
+				else if (y == 999)
+				{
+					ids[3] = -1;
+					ids[4] = -1;
+					ids[5] = -1;
+				}
+
+				++id;
+				fwrite(&ids[0], 9 * sizeof(int), 1, f);
+			}
+		}
+
+		fclose(f);
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	printf("Commands:\n");
@@ -290,6 +348,7 @@ int main(int argc, char* argv[])
 	//printf("\"-gen_cells_masks\" - create mask/PNG files for each cell.\n");
 	//printf("\"-gen_regions\" - create regions.\n");
 	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
+	printf("\"-create_cells_ids - create ids.bin .\n");
 	printf("\n");
 
 	miInputContext* m_inputContext = nullptr;
@@ -313,6 +372,10 @@ int main(int argc, char* argv[])
 		if (strcmp(argv[i], "-gen_basic_cells") == 0)
 		{
 			gen_basic_cells();
+		}
+		else if (strcmp(argv[i], "-create_cells_ids") == 0)
+		{
+			create_cells_ids();
 		}
 		/*else if (strcmp(argv[i], "-gen_cells_masks") == 0)
 		{

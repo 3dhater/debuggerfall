@@ -329,6 +329,7 @@ public:
 	ApplicationGUI* m_GUI = 0;
 
 	FILE* m_file_gen = 0;
+	FILE* m_file_ids = 0;
 
 
 	bool OnCreate(const char*);

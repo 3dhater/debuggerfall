@@ -27,6 +27,16 @@ MapCell::~MapCell()
 	}
 }
 
+void MapCell::Clear()
+{
+	m_id = -1;
+}
+
+void MapCell::InitNew()
+{
+
+}
+
 f32 MapCell_getY(
 	//TerrainVertex* vPtr, 
 	const v3f& vPosition,

@@ -99,8 +99,12 @@ public:
 	Aabb m_aabbTransformed;
 	v3f m_positionInWorld[16];
 
-	u32 m_id = 0;
+	s32 m_id = -1;
 	bool m_inView = false;
+
+	bool m_isReady = false;
+	void Clear();
+	void InitNew();
 
 	// -1 - not visible
 	// 0 - lod0
