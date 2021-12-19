@@ -26,14 +26,11 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "mixer.lib.h"
-#include "mixer.lib.inputContext.h"
-#include "mixer.lib.window.h"
-#include "mixer.lib.videoDriver.h"
-#include "mixer.lib.event.h"
-#include "mixer.lib.popup.h"
-#include "mixer.lib.material.h"
-#include "mixer.gui.h"
+#include "mi/MainSystem/MainSystem.h"
+#include "miGUI.h"
+
+#include "mi/Window/window.h"
+#include "mi/GraphicsSystem/GS.h"
 
 #include "application.h"
 #include "MapCell.h"
@@ -69,15 +66,15 @@ void log_onWarning(const char* message) {
 }
 
 void window_onCLose(miWindow* window) {
-	miQuit();
+	miGetMainSystem(0, 0)->Quit();
 }
 
 void window_onActivate(miWindow* window)
 {
-	g_app->m_inputContext->m_isMMBHold = false;
+	/*g_app->m_inputContext->m_isMMBHold = false;
 	g_app->m_inputContext->m_isLMBHold = false;
 	g_app->m_inputContext->m_isRMBHold = false;
-	g_app->m_inputContext->ResetHold();
+	g_app->m_inputContext->ResetHold();*/
 }
 
 void window_callbackOnCommand(s32 commandID) {
@@ -92,45 +89,45 @@ void window_callbackOnCommand(s32 commandID) {
 
 ApplicationGUI::ApplicationGUI()
 {
-	m_fontDefault = miGUILoadFont(L"../res/fonts/Noto/notosans.txt");
-	m_context = miGUICreateContext(g_app->m_mainWindow);
+	//m_fontDefault = miGUILoadFont(L"../res/fonts/Noto/notosans.txt");
+	//m_context = miGUICreateContext(g_app->m_mainWindow);
 }
 
 ApplicationGUI::~ApplicationGUI()
 {
-	if (m_panel_debug)m_context->DeleteElement(m_panel_debug);
-	if (m_panel_terrain) m_context->DeleteElement(m_panel_terrain);
-	if (m_context) miGUIDestroyContext(m_context);
+	//if (m_panel_debug)m_context->DeleteElement(m_panel_debug);
+	//if (m_panel_terrain) m_context->DeleteElement(m_panel_terrain);
+	//if (m_context) miGUIDestroyContext(m_context);
 }
 
 void ApplicationGUI::Init()
 {
-	m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
-	m_panel_terrain->m_color = ColorWhite;
-	m_panel_terrain->m_color.setAlpha(0.3f);
-	//m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
-	m_panel_terrain->m_draw = true;
-	m_panel_terrain->m_useScroll = false;
-	m_panel_terrain->SetVisible(false);
+	//m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
+	//m_panel_terrain->m_color = ColorWhite;
+	//m_panel_terrain->m_color.setAlpha(0.3f);
+	////m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
+	//m_panel_terrain->m_draw = true;
+	//m_panel_terrain->m_useScroll = false;
+	//m_panel_terrain->SetVisible(false);
 
-	m_panel_debug = m_context->CreatePanel(v2f(0.f, 0.f), v2f(800.f, 200.f));
-	m_panel_debug->m_color = ColorWhite;
-	m_panel_debug->m_color.setAlpha(0.3f);
-	//m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
-	m_panel_debug->m_draw = true;
-	m_panel_debug->m_useScroll = false;
-	{
-		m_debug_text_FPS = m_context->CreateText(v2f(), m_fontDefault, L"FPS: ");
-		m_debug_text_FPS->SetParent(m_panel_debug);
+	//m_panel_debug = m_context->CreatePanel(v2f(0.f, 0.f), v2f(800.f, 200.f));
+	//m_panel_debug->m_color = ColorWhite;
+	//m_panel_debug->m_color.setAlpha(0.3f);
+	////m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
+	//m_panel_debug->m_draw = true;
+	//m_panel_debug->m_useScroll = false;
+	//{
+	//	m_debug_text_FPS = m_context->CreateText(v2f(), m_fontDefault, L"FPS: ");
+	//	m_debug_text_FPS->SetParent(m_panel_debug);
 
-		m_debug_text_position = m_context->CreateText(v2f(100.f, 0.f), m_fontDefault, L":");
-		m_debug_text_position->SetParent(m_panel_debug);
+	//	m_debug_text_position = m_context->CreateText(v2f(100.f, 0.f), m_fontDefault, L":");
+	//	m_debug_text_position->SetParent(m_panel_debug);
 
-		m_debug_text_cameraCellID = m_context->CreateText(v2f(0.f, 20.f), m_fontDefault, L":");
-		m_debug_text_cameraCellID->SetParent(m_panel_debug);
-	}
+	//	m_debug_text_cameraCellID = m_context->CreateText(v2f(0.f, 20.f), m_fontDefault, L":");
+	//	m_debug_text_cameraCellID->SetParent(m_panel_debug);
+	//}
 
-	m_panel_debug->SetVisible(false);
+	//m_panel_debug->SetVisible(false);
 }
 
 Application::Application()
@@ -154,8 +151,10 @@ Application::~Application()
 
 	if (m_GUI)
 		delete m_GUI;
+
 	if (m_libContext)
 		miDestroy(m_libContext);
+
 	if (m_inputContext)
 		miDestroy(m_inputContext);
 }
