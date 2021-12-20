@@ -1,12 +1,25 @@
-﻿#include "mixer.lib.h"
-#include "mixer.gui.h"
+﻿#include "mi/MainSystem/MainSystem.h"
 #include "application.h"
 
 #include <exception>
 
+#ifdef MI_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
+
+#include "miGUI.h"
+#include "miGUILoader.h"
+
 int main(int argc, char* argv[])
 {
-	const char* videoDriverType = "mixer.vd.opengl33.dll"; // for example read name from .ini
+	MG_LIB_HANDLE gui_lib = mgLoad();
+	if (!gui_lib)
+	{
+		MessageBoxA(0, "Can't load migui.dll", "Error", MB_OK);
+		return 0;
+	}
+
+	const char* videoDriverType = "gs.d3d11.dll"; // for example read name from .ini
 	miStringA videoDriverTypeStr = videoDriverType;
 	for (int i = 0; i < argc; ++i)
 	{
@@ -27,5 +40,8 @@ int main(int argc, char* argv[])
 	}
 
 	delete app;
+
+	mgUnload(gui_lib);
+
 	return 0;
 }

@@ -1,6 +1,6 @@
-﻿#include "mixer.lib.h"
-#include "mixer.lib.mesh.h"
-#include "mixer.lib.gpuMesh.h"
+﻿#include "mi/MainSystem/MainSystem.h"
+#include "mi/Mesh/mesh.h"
+#include "mi/GraphicsSystem/GPUMesh.h"
 
 #include "application.h"
 #include "MapCell.h"

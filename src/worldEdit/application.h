@@ -14,28 +14,6 @@ void MapToVec(const  M& m, V& v) {
 class MapCell;
 class Player;
 
-class ApplicationGUI
-{
-public:
-	ApplicationGUI();
-	~ApplicationGUI();
-
-	/*miGUIContext* m_context = 0;
-	miGUIFont* m_fontDefault = 0;
-	miGUIPanel* m_panel_terrain = 0;
-	
-	miGUIPanel* m_panel_debug = 0;
-	miGUIText* m_debug_text_FPS = 0;
-	miGUIText* m_debug_text_position = 0;
-	miGUIText* m_debug_text_cameraCellID = 0;*/
-
-	void Init();
-};
-
-
-
-
-
 
 class Application
 {
@@ -44,7 +22,7 @@ public:
 	~Application();
 	
 	miMainSystem* m_mainSystem = 0;
-	miWindow* m_mainWindow = nullptr;
+	miWindow* m_windowMain = nullptr;
 	mgInputContext_s* m_inputContext = 0;
 	miGraphicsSystem* m_gs = 0;
 
@@ -60,6 +38,8 @@ public:
 	bool OnCreate(const char*);
 	void MainLoop();
 	void WriteLog(const char* message);
+
+
 	//miPopup* ShowPopup();
 	void ShowGUITab(u32);
 	bool OpenMap();

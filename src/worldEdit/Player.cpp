@@ -1,6 +1,8 @@
-﻿#include "mixer.lib.h"
-#include "mixer.lib.mesh.h"
-#include "mixer.lib.gpuMesh.h"
+﻿#include "mi/MainSystem/MainSystem.h"
+#include "mi/Mesh/mesh.h"
+#include "mi/GraphicsSystem/GPUMesh.h"
+#include "mi/Scene/common.h"
+#include "mi/Scene/cameraFly.h"
 
 #include "application.h"
 #include "Player.h"
@@ -9,7 +11,7 @@ extern Application* g_app;
 
 Player::Player() 
 {
-	m_cameraFly = new FlyCamera;
+	m_cameraFly = new miCameraFly;
 	m_cameraFly->m_localPosition.set(0.f, 0.0002f, 0.f, 0.f);
 	m_cameraFly->m_near = 0.0001000f;
 	m_cameraFly->m_far = 1000.f;

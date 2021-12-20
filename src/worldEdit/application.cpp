@@ -31,10 +31,14 @@
 
 #include "mi/Window/window.h"
 #include "mi/GraphicsSystem/GS.h"
+#include "mi/Event/event.h"
+#include "mi/Scene/common.h"
+#include "mi/Scene/cameraFly.h"
 
 #include "application.h"
 #include "MapCell.h"
 #include "Player.h"
+#include "GUI.h"
 
 #include <filesystem>
 
@@ -87,49 +91,6 @@ void window_callbackOnCommand(s32 commandID) {
 	}
 }
 
-ApplicationGUI::ApplicationGUI()
-{
-	//m_fontDefault = miGUILoadFont(L"../res/fonts/Noto/notosans.txt");
-	//m_context = miGUICreateContext(g_app->m_mainWindow);
-}
-
-ApplicationGUI::~ApplicationGUI()
-{
-	//if (m_panel_debug)m_context->DeleteElement(m_panel_debug);
-	//if (m_panel_terrain) m_context->DeleteElement(m_panel_terrain);
-	//if (m_context) miGUIDestroyContext(m_context);
-}
-
-void ApplicationGUI::Init()
-{
-	//m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
-	//m_panel_terrain->m_color = ColorWhite;
-	//m_panel_terrain->m_color.setAlpha(0.3f);
-	////m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
-	//m_panel_terrain->m_draw = true;
-	//m_panel_terrain->m_useScroll = false;
-	//m_panel_terrain->SetVisible(false);
-
-	//m_panel_debug = m_context->CreatePanel(v2f(0.f, 0.f), v2f(800.f, 200.f));
-	//m_panel_debug->m_color = ColorWhite;
-	//m_panel_debug->m_color.setAlpha(0.3f);
-	////m_panel_terrain->m_onUpdateTransform = GUICallback_pnlLeft_onUpdateTransform;
-	//m_panel_debug->m_draw = true;
-	//m_panel_debug->m_useScroll = false;
-	//{
-	//	m_debug_text_FPS = m_context->CreateText(v2f(), m_fontDefault, L"FPS: ");
-	//	m_debug_text_FPS->SetParent(m_panel_debug);
-
-	//	m_debug_text_position = m_context->CreateText(v2f(100.f, 0.f), m_fontDefault, L":");
-	//	m_debug_text_position->SetParent(m_panel_debug);
-
-	//	m_debug_text_cameraCellID = m_context->CreateText(v2f(0.f, 20.f), m_fontDefault, L":");
-	//	m_debug_text_cameraCellID->SetParent(m_panel_debug);
-	//}
-
-	//m_panel_debug->SetVisible(false);
-}
-
 Application::Application()
 {
 	g_app = this;
@@ -142,18 +103,15 @@ Application::~Application()
 	
 	if (m_player) 
 		delete m_player;
-	/*for (u32 i = 0; i < m_mapCells.m_size; ++i)
-	{
-		delete m_mapCells.m_data[i];
-	}*/
-	//if (m_testMapCell)
-	//	delete m_testMapCell;
+
+	if (m_windowMain)
+		m_windowMain->Release();
+
+	if (m_mainSystem)
+		m_mainSystem->Release();
 
 	if (m_GUI)
 		delete m_GUI;
-
-	if (m_libContext)
-		miDestroy(m_libContext);
 
 	if (m_inputContext)
 		miDestroy(m_inputContext);
@@ -192,18 +150,23 @@ bool Application::OnCreate(const char* videoDriver)
 		m_mapCells.push_back(new MapCell);
 	}
 
-	m_inputContext = miCreate<miInputContext>();
-	m_libContext = miCreate<miLibContext>();
-	m_libContext->Start(m_inputContext);
+	m_inputContext = miCreate<mgInputContext>();
+	memset(m_inputContext, 0, sizeof(mgInputContext));
+
+	m_GUI = new ApplicationGUI;
+	m_GUI->Init(m_inputContext);
+	
+	m_mainSystem = miGetMainSystem(m_GUI->m_guiContext, m_inputContext);
 
 	u32 windowFlags = 0;
-	m_mainWindow = miCreateWindow(800, 600, windowFlags, 0);
-	m_mainWindow->m_onClose = window_onCLose;
-	m_mainWindow->m_onActivate = window_onActivate;
-	m_mainWindow->m_onCommand = window_callbackOnCommand;
-	m_mainWindow->Show();
+	m_windowMain = m_mainSystem->CreateSystemWindow(800, 600, windowFlags, 0);
+	m_windowMain->m_onClose = window_onCLose;
+	m_windowMain->m_onActivate = window_onActivate;
+	m_windowMain->m_onCommand = window_callbackOnCommand;
+	m_windowMain->Show();
 
-	if (!miInitVideoDriver(videoDriver, m_mainWindow))
+	m_gs = m_mainSystem->GetGS(videoDriver, m_windowMain);
+	if (!m_gs)
 	{
 		miLogWriteWarning("Can't load video driver : %s\n", videoDriver);
 		for (auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
@@ -216,7 +179,8 @@ bool Application::OnCreate(const char* videoDriver)
 				{
 					miLogWriteWarning("Trying to load video driver : %s\n", path.generic_string().c_str());
 
-					if (miInitVideoDriver(path.generic_string().c_str(), m_mainWindow))
+					m_gs = m_mainSystem->GetGS(path.generic_string().c_str(), m_windowMain);
+					if (m_gs)
 					{
 						goto vidOk;
 					}
@@ -233,25 +197,11 @@ bool Application::OnCreate(const char* videoDriver)
 
 vidOk:
 
-	m_gpu = miGetVideoDriver();
-	m_gpu->SetClearColor(0.41f, 0.41f, 0.41f, 1.f);
-	m_gpu->GetDepthRange(&m_gpuDepthRange);
+	m_gs->SetClearColor(0.41f, 0.41f, 0.41f, 1.f);
+	m_gs->GetDepthRange(&m_gpuDepthRange);
 	//m_gpu->UseVSync(false);
 
 	
-
-	m_GUI = new ApplicationGUI;
-	m_GUI->Init();
-
-	
-
-	/*u32 num = 2;
-	for (u32 i = 0; i < 100; ++i)
-	{
-		num = i;
-		if ((num & 0x1) == 0)
-			printf("%u EVEN\n", num);
-	}*/
 
 	/*{
 		std::string src = "hello hello hello hello hello hello hello hello";
@@ -291,30 +241,31 @@ void Application::MainLoop()
 	f32 fpsTime = 0.f;
 
 	miEvent currentEvent;
-	while (miRun(&m_dt))
+	while (m_mainSystem->Run(&m_dt))
 	{
+		mgStartFrame(m_GUI->m_guiContext);
+		mgUpdate(m_GUI->m_guiContext);
 
 		if (m_needUpdateMapCell)
 			_updateMapCell();
 
-		bool isSpace = m_inputContext->IsKeyHold(miKey::K_SPACE);
-
-		if (m_inputContext->m_isRMBDown && !isSpace)
+		bool isSpace = mgIsKeyHold(m_inputContext, MG_KEY_SPACE);
+		if (m_inputContext->mouseButtonFlags1 & MG_MBFL_RMBDOWN && !isSpace)
 		{
-			auto p = ShowPopup();
+			/*auto p = ShowPopup();
 			if (p)
 			{
 				p->Show(m_mainWindow, (s32)m_inputContext->m_cursorCoords.x, (s32)m_inputContext->m_cursorCoords.y);
 				miDestroy(p);
-			}
+			}*/
 		}
 
-		if (m_inputContext->IsKeyHit(miKey::K_F3))
+		if (mgIsKeyHit(m_inputContext, MG_KEY_F3))
 		{
-			m_GUI->m_panel_debug->SetVisible(m_GUI->m_panel_debug->m_visible ? false : true);
+			//m_GUI->m_panel_debug->SetVisible(m_GUI->m_panel_debug->m_visible ? false : true);
 		}
 
-		if (m_GUI->m_panel_debug->m_visible)
+		/*if (m_GUI->m_panel_debug->m_visible)
 		{
 			++fps;
 			fpsTime += m_dt;
@@ -336,7 +287,7 @@ void Application::MainLoop()
 			);
 
 			m_GUI->m_debug_text_cameraCellID->SetText(L"Cell: %i", m_player->m_cellID);
-		}
+		}*/
 
 		/*if (m_inputContext->m_kbm == miKeyboardModifier::Alt)
 		{
@@ -349,38 +300,38 @@ void Application::MainLoop()
 		if (isSpace)
 		{
 			m_cameraWasMoved = true;
-			m_player->m_cameraFly->Rotate(m_inputContext->m_mouseDelta, m_dt);
-			if (m_inputContext->IsKeyHold(miKey::K_LSHIFT) || m_inputContext->IsKeyHold(miKey::K_RSHIFT))
+			m_player->m_cameraFly->Rotate(v2f(m_inputContext->mouseMoveDelta.x, m_inputContext->mouseMoveDelta.y), m_dt);
+			if (mgIsKeyHold(m_inputContext, MG_KEY_LSHIFT) || mgIsKeyHold(m_inputContext, MG_KEY_RSHIFT))
 				m_player->m_cameraFly->m_moveSpeed = 100.f;
 			else
 				m_player->m_cameraFly->m_moveSpeed = m_player->m_cameraFly->m_moveSpeedDefault;
 
-			if (m_inputContext->IsKeyHold(miKey::K_W))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_W))
 				m_player->MoveForward(m_dt);
-			if (m_inputContext->IsKeyHold(miKey::K_S))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_S))
 				m_player->MoveBackward(m_dt);
-			if (m_inputContext->IsKeyHold(miKey::K_A))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_A))
 				m_player->MoveLeft(m_dt);
-			if (m_inputContext->IsKeyHold(miKey::K_D))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_D))
 				m_player->MoveRight(m_dt);
-			if (m_inputContext->IsKeyHold(miKey::K_E))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_E))
 			{
 				m_player->MoveUp(m_dt);
 			}
-			if (m_inputContext->IsKeyHold(miKey::K_Q))
+			if (mgIsKeyHold(m_inputContext, MG_KEY_Q))
 			{
 				m_player->MoveDown(m_dt);
 			}
 
 			
 
-			auto cursorX = std::floor((f32)m_mainWindow->m_currentSize.x / 2.f);
-			auto cursorY = std::floor((f32)m_mainWindow->m_currentSize.y / 2.f);
+			auto cursorX = std::floor((f32)m_windowMain->m_currentSize.x / 2.f);
+			auto cursorY = std::floor((f32)m_windowMain->m_currentSize.y / 2.f);
 			//m_inputContext->m_cursorCoordsOld.set(cursorX, cursorY);
 
 			// move cursor to center of the window
 			// this example not about it, so implement it by yourself
-			miSetCursorPosition(cursorX, cursorY, m_mainWindow);
+			m_mainSystem->SetCursorPosition(cursorX, cursorY, m_windowMain);
 		}
 
 	//	FindCurrentCellID();
@@ -392,11 +343,11 @@ void Application::MainLoop()
 			FindLODs();
 		}
 
-		m_GUI->m_context->Update(m_dt);
+//		m_GUI->m_context->Update(m_dt);
 		//m_isCursorInGUI = miIsCursorInGUI();
 		//m_isGUIInputFocus = miIsInputInGUI();
 
-		while (miPollEvent(currentEvent))
+		while (m_mainSystem->PollEvent(currentEvent))
 		{
 			switch (currentEvent.m_type)
 			{
@@ -407,58 +358,26 @@ void Application::MainLoop()
 				break;
 			case miEventType::Window: {
 				if (currentEvent.m_event_window.m_event == miEvent_Window::size_changed) {
-					m_gpu->UpdateMainRenderTarget(v2f((f32)m_mainWindow->m_currentSize.x, (f32)m_mainWindow->m_currentSize.y));
-					m_GUI->m_context->NeedRebuild();
+					m_gs->UpdateMainRenderTarget(v2f((f32)m_windowMain->m_currentSize.x, (f32)m_windowMain->m_currentSize.y));
+	//				m_GUI->m_context->NeedRebuild();
 					//_callViewportOnWindowSize();
 				}
 			}break;
 			}
 		}
 
-		switch (*m_libContext->m_state)
-		{
-		default:
-			break;
-		case miSystemState::Run:
-		{
-			m_gpu->BeginDraw();
-			m_gpu->ClearAll();
+		
+		m_gs->BeginDraw();
+		m_gs->ClearAll();
 
-			miSetMatrix(miMatrixType::View, &m_activeCamera->m_view);
-			miSetMatrix(miMatrixType::Projection, &m_activeCamera->m_projection);
-			miSetMatrix(miMatrixType::ViewProjection, &m_activeCamera->m_viewProjection);
-			
+		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
 
-			/*m_gpu->UseDepth(false);*/
-			miMaterial default_polygon_material;
-			default_polygon_material.m_colorDiffuse.set(1.f, 0.5f, 0.5f, 0.8f);
-			default_polygon_material.m_type = miMaterialType::Standart;
-			default_polygon_material.m_sunPos = v4f(0.f, 10.f, 0.f, 0.f);
-			default_polygon_material.m_wireframe = true;
-			miSetMaterial(&default_polygon_material);
-		//	if (m_testMapCell)
-		//	{
-		//		DrawMapCell(m_testMapCell);
-		//	}
+		m_gs->EndDraw();
+		m_gs->SwapBuffers();
 
-		/*	for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
-			{
-				DrawMapCell(m_visibleMapCells.m_data[i]);
-			}*/
-
-			m_gpu->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed);
-			m_gpu->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime);
-
-			m_gpu->BeginDrawGUI();
-			m_GUI->m_context->DrawAll();
-			m_gpu->EndDrawGUI();
-
-			m_gpu->EndDraw();
-			m_gpu->SwapBuffers();
-		}
-		break;
-		}
-
+		m_inputContext->mouseMoveDelta.x = 0;
+		m_inputContext->mouseMoveDelta.y = 0;
 	}
 }
 
@@ -472,19 +391,19 @@ void Application::WriteLog(const char* message)
 	}
 }
 
-miPopup* Application::ShowPopup()
-{
-	miPopup* p = miCreatePopup(); // new miPopup;
-	p->AddItem(L"Terrain editor", CommandID_TerrainEditor, 0);
-	return p;
-}
+//miPopup* Application::ShowPopup()
+//{
+//	miPopup* p = miCreatePopup(); // new miPopup;
+//	p->AddItem(L"Terrain editor", CommandID_TerrainEditor, 0);
+//	return p;
+//}
 
 void Application::ShowGUITab(u32 id)
 {
 	switch (id)
 	{
 	case CommandID_TerrainEditor:
-		m_GUI->m_panel_terrain->SetVisible(true);
+		//m_GUI->m_panel_terrain->SetVisible(true);
 		break;
 	}
 }
