@@ -178,7 +178,10 @@ enum {
 	MG_KBMOD_CTRLSHIFTALT = 0x40
 };
 
-/* You must update states by yourself */
+/* You must update states by yourself
+* Don't forget to init:
+*   memset(m_inputContext, 0, sizeof(mgInputContext));
+ */
 typedef struct mgInputContext_s {
 	mgPoint mousePosition;
 	mgPoint mousePositionOld;

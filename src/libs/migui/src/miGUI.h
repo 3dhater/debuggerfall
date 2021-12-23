@@ -110,10 +110,18 @@ typedef void (*PFNMGDESTROYCONTEXTPROC)(struct mgContext_s*);
 extern PFNMGDESTROYCONTEXTPROC mgDestroyContext_p;
 #define mgDestroyContext mgDestroyContext_p
 
-/*Create bitmap font or load from file.*/
-typedef mgFont* (*PFNMGCREATEFONTPROC)(struct mgContext_s*, const char*, unsigned int flags, int size);
+/* Create bitmap font or load from file.
+* If filename exist load from file. If not then try to generate from installed system font.
+* Destroy it by yourself (call mgDestroyFont).
+* saveIt (optional) - save .txt and images dds rgba in ../data/fonts/$saveIt/
+*/
+typedef mgFont* (*PFNMGCREATEFONTPROC)(struct mgContext_s*, const char* filename, unsigned int flags, int size, const char* saveIt);
 extern PFNMGCREATEFONTPROC mgCreateFont_p;
 #define mgCreateFont mgCreateFont_p
+
+typedef void (*PFNMGDESTROYFONTPROC)(struct mgContext_s*, mgFont*);
+extern PFNMGDESTROYFONTPROC mgDestroyFont_p;
+#define mgDestroyFont mgDestroyFont_p
 
 /*call before event loop*/
 typedef void (*PFNMGSTARTFRAMEPROC)(struct mgContext_s*);
@@ -169,11 +177,15 @@ extern PFNMGSETCURSORPROC mgSetCursor_p;
 }
 #endif
 
-/*all functions must be here too*/
+/*All functions must be here too.
+* Idea is: you load migui.dll in your exe,
+*   and then you can use functions in your dlls.
+*/
 struct mgFunctions_s {
 	PFNMGCREATECONTEXTPROC CreateContext_p;
 	PFNMGDESTROYCONTEXTPROC DestroyContext_p;
 	PFNMGCREATEFONTPROC CreateFont_p;
+	PFNMGDESTROYFONTPROC DestroyFont_p;
 	PFNMGSTARTFRAMEPROC StartFrame_p;
 	PFNMGUPDATEPROC Update_p;
 	PFNMGSETPARENTPROC SetParent_p;

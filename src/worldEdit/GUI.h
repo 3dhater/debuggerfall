@@ -2,11 +2,12 @@
 #define _GUI_H_
 
 struct mgVideoDriverAPI_s;
+//class GUIShader;
 
 class ApplicationGUI
 {
 public:
-	ApplicationGUI();
+	ApplicationGUI(mgInputContext_s* ic);
 	~ApplicationGUI();
 
 	/*miGUIContext* m_context = 0;
@@ -20,8 +21,13 @@ public:
 
 	mgVideoDriverAPI_s* m_guiGPU = 0;
 	mgContext_s* m_guiContext = 0;
+	mgFont* m_font1 = 0;
+	mgElement* m_textFPS = 0;
 
-	void Init(mgInputContext_s* ic);
+	Mat4 m_proj;
+	//miGSDrawCommand m_drawCommand;
+	//GUIShader* m_shader = 0;
+	void Init();
 };
 
 

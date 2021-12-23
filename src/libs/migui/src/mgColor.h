@@ -42,7 +42,7 @@ typedef struct mgColor_s {
 		r(0.f),
 		g(0.f),
 		b(0.f),
-		a(0.f)
+		a(1.f)
 	{}
 
 	mgColor_s(float R, float G, float B, float A)
@@ -74,6 +74,7 @@ typedef struct mgColor_s {
 		r = float(unsigned char(rgb >> 16u)) * 0.00392156862745f;
 		g = float(unsigned char(rgb >> 8u)) * 0.00392156862745f;
 		b = float(unsigned char(rgb)) * 0.00392156862745f;
+		a = 1.f;
 	}
 
 	void setAsIntegerBGR(unsigned int rgb)
@@ -81,6 +82,7 @@ typedef struct mgColor_s {
 		b = float(unsigned char(rgb >> 16u)) * 0.00392156862745f;
 		g = float(unsigned char(rgb >> 8u)) * 0.00392156862745f;
 		r = float(unsigned char(rgb)) * 0.00392156862745f;
+		a = 1.f;
 	}
 
 	const unsigned char getAsByteRed() const { return static_cast<unsigned char>(r * 255.); }
@@ -111,6 +113,12 @@ void mgColorSet(mgColor* c, float R, float G, float B, float A)
 	c->a = A;
 }
 
+/* I DON"T KNOW ABOUT RIGHT ORDER BGR OR RGB
+* Idea is: 0xff0000 must be red
+*          0x00ff00 green
+*          0x0000ff blue
+*/
+
 /*0xFF112233*/
 inline
 void mgColorSetAsIntegerARGB(mgColor* c, unsigned int argb)
@@ -127,6 +135,7 @@ void mgColorSetAsIntegerRGB(mgColor* c, unsigned int rgb)
 	c->r = (float)((unsigned char)(rgb >> 16u)) * 0.00392156862745f;
 	c->g = (float)((unsigned char)(rgb >> 8u)) * 0.00392156862745f;
 	c->b = (float)((unsigned char)(rgb)) * 0.00392156862745f;
+	c->a = 1.f;
 }
 
 inline
@@ -147,6 +156,17 @@ unsigned int mgColorGetAsIntegerRGB(mgColor* c)
 		c->b * 255.,
 		c->g * 255.,
 		c->r * 255.,
+		0
+	);
+}
+
+inline
+unsigned int mgColorGetAsIntegerBGR(mgColor* c)
+{
+	return MG_MAKEFOURCC(
+		c->r * 255.,
+		c->g * 255.,
+		c->b * 255.,
 		0
 	);
 }

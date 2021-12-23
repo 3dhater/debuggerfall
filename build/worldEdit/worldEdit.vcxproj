@@ -21,12 +21,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c" />
     <ClCompile Include="..\..\src\worldEdit\application.cpp" />
+    <ClCompile Include="..\..\src\worldEdit\GUI.cpp" />
     <ClCompile Include="..\..\src\worldEdit\MapCell.cpp" />
     <ClCompile Include="..\..\src\worldEdit\Player.cpp" />
     <ClCompile Include="..\..\src\worldEdit\worldEdit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\worldEdit\application.h" />
+    <ClInclude Include="..\..\src\worldEdit\GUI.h" />
     <ClInclude Include="..\..\src\worldEdit\MapCell.h" />
     <ClInclude Include="..\..\src\worldEdit\Player.h" />
   </ItemGroup>

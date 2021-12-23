@@ -13,7 +13,7 @@ void MapToVec(const  M& m, V& v) {
 
 class MapCell;
 class Player;
-
+class ApplicationGUI;
 
 class Application
 {

@@ -104,14 +104,15 @@ Application::~Application()
 	if (m_player) 
 		delete m_player;
 
+	if (m_GUI)
+		delete m_GUI;
+
 	if (m_windowMain)
 		m_windowMain->Release();
 
 	if (m_mainSystem)
 		m_mainSystem->Release();
 
-	if (m_GUI)
-		delete m_GUI;
 
 	if (m_inputContext)
 		miDestroy(m_inputContext);
@@ -153,8 +154,7 @@ bool Application::OnCreate(const char* videoDriver)
 	m_inputContext = miCreate<mgInputContext>();
 	memset(m_inputContext, 0, sizeof(mgInputContext));
 
-	m_GUI = new ApplicationGUI;
-	m_GUI->Init(m_inputContext);
+	m_GUI = new ApplicationGUI(m_inputContext);
 	
 	m_mainSystem = miGetMainSystem(m_GUI->m_guiContext, m_inputContext);
 
@@ -196,6 +196,8 @@ bool Application::OnCreate(const char* videoDriver)
 	}
 
 vidOk:
+	
+	m_GUI->Init();
 
 	m_gs->SetClearColor(0.41f, 0.41f, 0.41f, 1.f);
 	m_gs->GetDepthRange(&m_gpuDepthRange);
@@ -372,6 +374,8 @@ void Application::MainLoop()
 
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
+
+		mgDraw(m_GUI->m_guiContext);
 
 		m_gs->EndDraw();
 		m_gs->SwapBuffers();
