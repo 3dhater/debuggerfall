@@ -162,6 +162,7 @@ bool Application::OnCreate(const char* videoDriver)
 	m_windowMain = m_mainSystem->CreateSystemWindow(800, 600, windowFlags, 0);
 	m_windowMain->m_onClose = window_onCLose;
 	m_windowMain->m_onActivate = window_onActivate;
+	//m_windowMain->m_onSActivate = window_onActivate;
 	m_windowMain->m_onCommand = window_callbackOnCommand;
 	m_windowMain->Show();
 
@@ -198,6 +199,7 @@ bool Application::OnCreate(const char* videoDriver)
 vidOk:
 	
 	m_GUI->Init();
+	m_GUI->UpdateMatrix((s32)m_windowMain->m_currentSize.x, (s32)m_windowMain->m_currentSize.y);
 
 	m_gs->SetClearColor(0.41f, 0.41f, 0.41f, 1.f);
 	m_gs->GetDepthRange(&m_gpuDepthRange);
@@ -245,6 +247,16 @@ void Application::MainLoop()
 	miEvent currentEvent;
 	while (m_mainSystem->Run(&m_dt))
 	{
+		++fps;
+		fpsTime += m_dt;
+		if (fpsTime > 1.f)
+		{
+			m_GUI->SetTextFPS(fps);
+			//(mgElementText*)(m_GUI->m_textFPS->implementation) m_debug_text_FPS->SetText(L"FPS:%i", fps);
+			fps = 0;
+			fpsTime = 0.f;
+		}
+
 		mgStartFrame(m_GUI->m_guiContext);
 		mgUpdate(m_GUI->m_guiContext);
 
@@ -269,14 +281,7 @@ void Application::MainLoop()
 
 		/*if (m_GUI->m_panel_debug->m_visible)
 		{
-			++fps;
-			fpsTime += m_dt;
-			if (fpsTime > 1.f)
-			{
-				m_GUI->m_debug_text_FPS->SetText(L"FPS:%i", fps);
-				fps = 0;
-				fpsTime = 0.f;
-			}
+			
 
 			m_GUI->m_debug_text_position->SetText(L"%f %f %f (%Lf %Lf %Lf)", 
 				m_activeCamera->m_localPosition.x,
@@ -302,7 +307,7 @@ void Application::MainLoop()
 		if (isSpace)
 		{
 			m_cameraWasMoved = true;
-			m_player->m_cameraFly->Rotate(v2f(m_inputContext->mouseMoveDelta.x, m_inputContext->mouseMoveDelta.y), m_dt);
+			m_player->m_cameraFly->Rotate(v2f((f32)m_inputContext->mouseMoveDelta.x, (f32)m_inputContext->mouseMoveDelta.y), m_dt);
 			if (mgIsKeyHold(m_inputContext, MG_KEY_LSHIFT) || mgIsKeyHold(m_inputContext, MG_KEY_RSHIFT))
 				m_player->m_cameraFly->m_moveSpeed = 100.f;
 			else
@@ -361,7 +366,8 @@ void Application::MainLoop()
 			case miEventType::Window: {
 				if (currentEvent.m_event_window.m_event == miEvent_Window::size_changed) {
 					m_gs->UpdateMainRenderTarget(v2f((f32)m_windowMain->m_currentSize.x, (f32)m_windowMain->m_currentSize.y));
-	//				m_GUI->m_context->NeedRebuild();
+					m_GUI->m_guiContext->needRebuild = 1;
+					m_GUI->UpdateMatrix(m_windowMain->m_currentSize.x, m_windowMain->m_currentSize.y);
 					//_callViewportOnWindowSize();
 				}
 			}break;
@@ -374,6 +380,7 @@ void Application::MainLoop()
 
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
+///		m_gs->DrawRectangle(v4f(0.f, 0.f, 100.f, 100.f), ColorRed, ColorBlue, );
 
 		mgDraw(m_GUI->m_guiContext);
 

@@ -8,6 +8,8 @@
 #include "Player.h"
 #include "GUI.h"
 
+#include <cwchar>
+
 extern Application* g_app;
 
 void gui_beginDraw();
@@ -96,6 +98,14 @@ ApplicationGUI::~ApplicationGUI()
 	//if (m_context) miGUIDestroyContext(m_context);
 }
 
+void ApplicationGUI::UpdateMatrix(s32 x, s32 y)
+{
+	m_proj.m_data[0] = v4f(2.0f / x, 0.0f, 0.0f, 0.0f);
+	m_proj.m_data[1] = v4f(0.0f, 2.0f / -y, 0.0f, 0.0f);
+	m_proj.m_data[2] = v4f(0.0f, 0.0f, 0.5f, 0.0f);
+	m_proj.m_data[3] = v4f(-1.f, 1.f, 0.5f, 1.0f);
+}
+
 void ApplicationGUI::Init()
 {
 	/*m_shader = new GUIShader;
@@ -124,6 +134,7 @@ void ApplicationGUI::Init()
 	
 	mgPointSet(&position, 0, 0);
 	m_textFPS = mgCreateText(m_guiContext, &position, L"FPS: ", m_font1);
+	((mgElementText*)m_textFPS)->color.a = 1.f;
 
 	//m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
 	//m_panel_terrain->m_color = ColorWhite;
@@ -151,6 +162,17 @@ void ApplicationGUI::Init()
 	//}
 
 	//m_panel_debug->SetVisible(false);
+}
+
+void ApplicationGUI::SetTextFPS(s32 fps)
+{
+	static wchar_t fps_buf[10];
+	fps_buf[9] = 0;
+	if (fps > 999 || fps < 0)
+		fps = 0;
+	swprintf(fps_buf, L"FPS: %i", fps);
+	((mgElementText*)m_textFPS->implementation)->text = fps_buf;
+	((mgElementText*)m_textFPS->implementation)->textLen = wcslen(fps_buf);
 }
 
 bool g_gui_oldDepth = false;
@@ -200,10 +222,10 @@ void gui_drawRectangle(mgElement* element, mgPoint* position, mgPoint* size, mgC
 	mgColor* color2, mgTexture texture, mgVec4* UVRegion)
 {
 	v4f corners;
-	corners.x = position->x;
-	corners.y = position->y;
-	corners.z = corners.x + size->x;
-	corners.w = corners.y + size->y;
+	corners.x = (f32)position->x;
+	corners.y = (f32)position->y;
+	corners.z = corners.x + (f32)size->x;
+	corners.w = corners.y + (f32)size->y;
 
 	miColor c1, c2;
 
@@ -227,7 +249,6 @@ void gui_drawText(
 	mgFont* font)
 {
 	mgPoint _position = *position;
-
 	for (int i = 0; i < textLen; ++i)
 	{
 		wchar_t character = text[i];
@@ -246,10 +267,10 @@ void gui_drawText(
 			miGPUTexture* texture = (miGPUTexture*)((mgFontBitmap*)font->implementation)[glyph->textureSlot].gpuTexture;
 
 			miColor c;
-			c.m_data[0] = color->r;
-			c.m_data[1] = color->g;
-			c.m_data[2] = color->b;
-			c.m_data[3] = color->a;
+			c.m_data[0] = 1.f;
+			c.m_data[1] = 1.f;
+			c.m_data[2] = 1.f;
+			c.m_data[3] = 1.f;
 
 			v4f uv;
 			uv.x = glyph->UV.x;
@@ -302,3 +323,4 @@ mgRect gui_setClipRect(mgRect* r)
 	old = *r;
 	return ret;
 }
+

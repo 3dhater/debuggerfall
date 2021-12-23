@@ -28,6 +28,8 @@ public:
 	//miGSDrawCommand m_drawCommand;
 	//GUIShader* m_shader = 0;
 	void Init();
+	void UpdateMatrix(s32 x, s32 y);
+	void SetTextFPS(s32 fps);
 };
 
 
