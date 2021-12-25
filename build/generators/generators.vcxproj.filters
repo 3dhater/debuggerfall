@@ -27,5 +27,8 @@
     <ClCompile Include="..\..\inc\fastlz.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

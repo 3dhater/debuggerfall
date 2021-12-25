@@ -30,8 +30,9 @@
 #include <cstring>
 #include <filesystem>
 
-#include "mixer.lib.h"
-#include "mixer.lib.inputContext.h"
+#include "mi/MainSystem/MainSystem.h"
+#include "miGUI.h"
+#include "miGUILoader.h"
 #include "MapCell.h"
 #include "dpk.h"
 
@@ -283,58 +284,68 @@ void print_dpk(const char* fileName)
 	}
 }
 
-void create_cells_ids()
+void create_cells_bdata()
 {
-	FILE* f = fopen("../data/world/ids.bin", "wb");
+	FILE* f = fopen("../data/world/b.bin", "wb");
 	if (f)
 	{
-		int ids[9];
+		CellBaseData bd;
 		int id = 0;
+		f32 pos_x = -500.f;
+		f32 pos_z = -500.f;
 		for (int y = 0; y < 1000; ++y)
 		{
 			for (int x = 0; x < 1000; ++x)
 			{
-				ids[0] = id;
-				ids[1] = ids[0] + 1;
-				ids[2] = ids[0] - 1;
+				bd.ids[0] = id;
+				bd.ids[1] = bd.ids[0] + 1;
+				bd.ids[2] = bd.ids[0] - 1;
 
-				ids[3] = ids[0] + 1000 + 1;
-				ids[4] = ids[3] - 1;
-				ids[5] = ids[4] - 1;
+				bd.ids[3] = bd.ids[0] + 1000 + 1;
+				bd.ids[4] = bd.ids[3] - 1;
+				bd.ids[5] = bd.ids[4] - 1;
 
-				ids[6] = ids[0] - 1000 + 1;
-				ids[7] = ids[6] - 1;
-				ids[8] = ids[7] - 1;
+				bd.ids[6] = bd.ids[0] - 1000 + 1;
+				bd.ids[7] = bd.ids[6] - 1;
+				bd.ids[8] = bd.ids[7] - 1;
 
 				if (x == 0)
 				{
-					ids[5] = -1;
-					ids[2] = -1;
-					ids[8] = -1;
+					bd.ids[5] = -1;
+					bd.ids[2] = -1;
+					bd.ids[8] = -1;
 				}
 				else if (x == 999)
 				{
-					ids[3] = -1;
-					ids[1] = -1;
-					ids[6] = -1;
+					bd.ids[3] = -1;
+					bd.ids[1] = -1;
+					bd.ids[6] = -1;
 				}
 
 				if (y == 0)
 				{
-					ids[6] = -1;
-					ids[7] = -1;
-					ids[8] = -1;
+					bd.ids[6] = -1;
+					bd.ids[7] = -1;
+					bd.ids[8] = -1;
 				}
 				else if (y == 999)
 				{
-					ids[3] = -1;
-					ids[4] = -1;
-					ids[5] = -1;
+					bd.ids[3] = -1;
+					bd.ids[4] = -1;
+					bd.ids[5] = -1;
 				}
 
+				// позиции ячеек начинаются с самого отрицательного значения.
+				bd.pos[0] = pos_x;
+				bd.pos[1] = pos_z;
+
+				pos_x += 1.f;
+
 				++id;
-				fwrite(&ids[0], 9 * sizeof(int), 1, f);
+				fwrite(&bd, sizeof(CellBaseData), 1, f);
 			}
+			pos_x = -500.f;
+			pos_z += 1.f;
 		}
 
 		fclose(f);
@@ -348,15 +359,31 @@ int main(int argc, char* argv[])
 	//printf("\"-gen_cells_masks\" - create mask/PNG files for each cell.\n");
 	//printf("\"-gen_regions\" - create regions.\n");
 	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
-	printf("\"-create_cells_ids - create ids.bin .\n");
+	printf("\"-create_cells_bdata - create base data b.bin .\n");
 	printf("\n");
 
-	miInputContext* m_inputContext = nullptr;
-	miLibContext* m_libContext = nullptr;
+	MG_LIB_HANDLE gui_lib = mgLoad();
+	if (!gui_lib)
+	{
+		MessageBoxA(0, "Can't load migui.dll", "Error", MB_OK);
+		return 0;
+	}
 
-	m_inputContext = miCreate<miInputContext>();
-	m_libContext = miCreate<miLibContext>();
-	m_libContext->Start(m_inputContext);
+	mgInputContext* m_inputContext = miCreate<mgInputContext>();
+	memset(m_inputContext, 0, sizeof(mgInputContext));
+
+	mgVideoDriverAPI * m_guiGPU = new mgVideoDriverAPI;
+	m_guiGPU->createTexture = 0;
+	m_guiGPU->destroyTexture = 0;
+	m_guiGPU->beginDraw = 0;
+	m_guiGPU->endDraw = 0;
+	m_guiGPU->drawRectangle = 0;
+	m_guiGPU->drawText = 0;
+	m_guiGPU->setClipRect = 0;
+
+	auto m_guiContext = mgCreateContext(m_guiGPU, m_inputContext);
+
+	auto m_mainSystem = miGetMainSystem(m_guiContext, m_inputContext);
 
 	for (int i = 0; i < argc; ++i)
 	{
@@ -373,9 +400,9 @@ int main(int argc, char* argv[])
 		{
 			gen_basic_cells();
 		}
-		else if (strcmp(argv[i], "-create_cells_ids") == 0)
+		else if (strcmp(argv[i], "-create_cells_bdata") == 0)
 		{
-			create_cells_ids();
+			create_cells_bdata();
 		}
 		/*else if (strcmp(argv[i], "-gen_cells_masks") == 0)
 		{
@@ -384,11 +411,20 @@ int main(int argc, char* argv[])
 		char x = 'z';
 
 	}
+	
+	if (m_mainSystem)
+		m_mainSystem->Release();
 
-	if (m_libContext)
-		miDestroy(m_libContext);
+	if (m_guiContext)
+		mgDestroyContext(m_guiContext);
+
+	if (m_guiGPU)
+		delete m_guiGPU;
+
 	if (m_inputContext)
 		miDestroy(m_inputContext);
+	
+	mgUnload(gui_lib);
 
 	return 0;
 }

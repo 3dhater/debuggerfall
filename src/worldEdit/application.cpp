@@ -421,14 +421,16 @@ void Application::ShowGUITab(u32 id)
 
 bool Application::OpenMap()
 {
-	if (std::filesystem::exists("../data/world.dat"))
+
+
+	/*if (std::filesystem::exists("../data/world.dat"))
 	{
 		ReadWorld();
 	}
 	else
 	{
 		GenerateWorld();
-	}
+	}*/
 
 	return true;
 }
@@ -667,10 +669,15 @@ void Application::_updateMapCell()
 		* [1][0][2]
 		* [6][7][8]
 		*/
-		s32 newIDs[9];
+		/*s32 newIDs[9];
+		float newPos[3];*/
+		CellBaseData cbd;
+		CellBaseData cbd_pos;
 
-		fseek(m_file_ids, m_player->m_cellID * (9*sizeof(s32)), SEEK_SET);
-		fread(&newIDs[0], sizeof(s32) * 9, 1, m_file_ids);
+		fseek(m_file_ids, m_player->m_cellID * sizeof(CellBaseData), SEEK_SET);
+		fread(&cbd, sizeof(cbd), 1, m_file_ids);
+		//fread(&newPos[0], sizeof(float) * 3, 1, m_file_ids);
+
 		/*printf("%i %i %i\n%i %i %i\n%i %i %i\n\n",
 			newIDs[5], newIDs[4], newIDs[3],
 			newIDs[2], newIDs[0], newIDs[1],
@@ -678,12 +685,13 @@ void Application::_updateMapCell()
 
 		/*
 		* Сначала прохожусь по массиву с ячейками.
-		*  Беру m_id и если он не равен -1 проверяю с массивом newIDs
+		*  Беру m_id и если он не равен -1 проверяю с массивом newIDs (cbd.ids)
 		*  Если не найдено значит нужно очистить ячейку и сделать m_id = -1
 		* Далее прохожусь по newIDs.
 		*  Беру значение, если оно не -1 то прохожусь по массиву с ячейками.
-		*   Беру ячейку, если m_id равен -1 то инициализирую эту ячейку новыми
-		*    данными и присваиваю новый m_id
+		*   Надо проверить, не инициализирована ли уже эта ячейка. // надо вставить это newIDs[i2] = -1; вместо break в первых циклах
+		*   Далее беру ячейку, если m_id равен -1 то инициализирую эту ячейку новыми
+		*   данными и присваиваю новый m_id
 		*/
 		for (s32 i = 0; i < 9; ++i)
 		{
@@ -692,10 +700,11 @@ void Application::_updateMapCell()
 				bool found = false;
 				for (s32 i2 = 0; i2 < 9; ++i2)
 				{
-					if (newIDs[i2] == m_mapCells.m_data[i]->m_id)
+					if (cbd.ids[i2] == m_mapCells.m_data[i]->m_id)
 					{
 						found = true;
-						break;
+						cbd.ids[i2] = -1;
+					//	break;
 					}
 				}
 				if(!found)
@@ -703,9 +712,25 @@ void Application::_updateMapCell()
 			}
 		}
 		
+		f32 newPos[3];
 		for (s32 i = 0; i < 9; ++i)
 		{
+			if (cbd.ids[i] != -1) // горантированно не инициализированная ячейка, так как ранее вставили newIDs[i2] = -1;
+			{
+				// беру свободную ячейку и инициализирую
+				for (s32 i2 = 0; i2 < 9; ++i2)
+				{
+					if (m_mapCells.m_data[i2]->m_id == -1)
+					{
+						// read position
+						fseek(m_file_ids, cbd.ids[i] * sizeof(CellBaseData), SEEK_SET);
+						fread(&cbd_pos, sizeof(cbd_pos), 1, m_file_ids);
 
+						m_mapCells.m_data[i2]->InitNew(cbd.ids[i], cbd_pos.pos);
+						break;
+					}
+				}
+			}
 		}
 
 		prev_ID = m_player->m_cellID;

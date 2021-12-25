@@ -32,9 +32,16 @@ void MapCell::Clear()
 	m_id = -1;
 }
 
-void MapCell::InitNew()
+void MapCell::InitNew(s32 id, f32* pos)
 {
+	if (m_id != -1 || id == -1)
+		return;
 
+	m_position.x = pos[0];
+	m_position.y = 0.f;
+	m_position.z = pos[1];
+
+	m_id = id;
 }
 
 f32 MapCell_getY(

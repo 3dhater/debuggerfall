@@ -32,11 +32,17 @@
 #include <map>
 #include <string>
 
-struct TerrainGenInfo
+struct CellGenInfo
 {
 	int type;
 	int flags;
 	int data[8];
+};
+
+struct CellBaseData
+{
+	int ids[9];
+	float pos[2];
 };
 
 struct TerrainVertex
@@ -97,14 +103,16 @@ public:
 
 	Aabb m_aabb;
 	Aabb m_aabbTransformed;
-	v3f m_positionInWorld[16];
+	//v3f m_positionInWorld[16];
 
 	s32 m_id = -1;
 	bool m_inView = false;
 
 	bool m_isReady = false;
 	void Clear();
-	void InitNew();
+
+	// pos: x, z
+	void InitNew(s32 id, f32 * pos);
 
 	// -1 - not visible
 	// 0 - lod0
