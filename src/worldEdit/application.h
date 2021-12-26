@@ -14,6 +14,8 @@ void MapToVec(const  M& m, V& v) {
 class MapCell;
 class Player;
 class ApplicationGUI;
+class miMesh;
+class ShaderTerrain;
 
 class Application
 {
@@ -32,7 +34,7 @@ public:
 	ApplicationGUI* m_GUI = 0;
 
 	FILE* m_file_gen = 0;
-	FILE* m_file_ids = 0;
+	FILE* m_file_ids = 0; // base data
 
 
 	bool OnCreate(const char*);
@@ -61,6 +63,10 @@ public:
 
 	bool m_cameraWasMoved = true;
 	void FindLODs();
+
+	miMesh* m_cellbase = 0; // square 250x250 meters
+	miGPUMesh* m_cellbaseGPU = 0;
+	ShaderTerrain* m_shaderTerrain = 0;
 };
 
 #endif

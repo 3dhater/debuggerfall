@@ -31,10 +31,85 @@
 #include <filesystem>
 
 #include "mi/MainSystem/MainSystem.h"
+#include "mi/Mesh/mesh.h"
 #include "miGUI.h"
 #include "miGUILoader.h"
 #include "MapCell.h"
 #include "dpk.h"
+
+// создать базовый меш дл€ €чеек.
+void create_cell_base()
+{
+	s32 quadNum = 100;
+	f32 sizeHalf = 0.1f * 0.5f;
+
+	miMesh * m_cellTemplate = new miMesh;
+	m_cellTemplate->m_indexType = miMeshIndexType::u32;
+	m_cellTemplate->m_vertexType = miMeshVertexType::Triangle;
+	m_cellTemplate->m_aabb.reset();
+	m_cellTemplate->m_vCount = (quadNum + 1) * (quadNum + 1);
+	m_cellTemplate->m_iCount = (quadNum * quadNum) * 2 * 3;
+	m_cellTemplate->m_stride = sizeof(miVertexTriangle);
+	printf("iCount: %i\n", m_cellTemplate->m_iCount);
+	m_cellTemplate->m_vertices = (u8*)miMalloc(m_cellTemplate->m_stride * m_cellTemplate->m_vCount);
+	m_cellTemplate->m_indices = (u8*)miMalloc(sizeof(u32) * m_cellTemplate->m_iCount);
+
+	miVertexTriangle* vPtr = (miVertexTriangle*)m_cellTemplate->m_vertices;
+	u32* iPtr = (u32*)m_cellTemplate->m_indices;
+
+	f32 quadSize = 0.001f;
+	u32 vertexIndexCounter = 0;
+
+	v3f pos(-sizeHalf, 0.f, -sizeHalf);	
+
+	for (u32 k = 0; k < quadNum + 1; ++k)
+	{
+		for (u32 o = 0; o < quadNum + 1; ++o)
+		{
+			vPtr->Position.x = pos.x;
+			vPtr->Position.z = pos.z;
+			vPtr++;
+
+			pos.x += quadSize;
+		}
+		pos.z += quadSize;
+
+		pos.x = -sizeHalf;
+	}
+
+	u32 i1 = 0;
+	u32 i2 = quadNum + 1;
+	for (u32 k = 0; k < quadNum; ++k)
+	{
+		for (u32 o = 0; o < quadNum; ++o)
+		{
+			*iPtr = i1; iPtr++;
+			*iPtr = i1 + 1; iPtr++;
+			*iPtr = i2 + 1; iPtr++;
+			
+			*iPtr = i1; iPtr++;
+			*iPtr = i2 + 1; iPtr++;
+			*iPtr = i2; iPtr++;
+
+			i1++;
+			i2++;
+		}
+
+		i1++;
+		i2++;
+	}
+
+	FILE* f = fopen("../data/world/cellbase.bin", "wb");
+	if (f)
+	{
+		fwrite(m_cellTemplate, sizeof(miMesh), 1, f);
+		fwrite(m_cellTemplate->m_vertices, m_cellTemplate->m_stride * m_cellTemplate->m_vCount, 1, f);
+		fwrite(m_cellTemplate->m_indices, sizeof(u32) * m_cellTemplate->m_iCount, 1, f);
+		fclose(f);
+	}
+
+	delete m_cellTemplate;
+}
 
 void gen_basic_cells()
 {
@@ -360,6 +435,7 @@ int main(int argc, char* argv[])
 	//printf("\"-gen_regions\" - create regions.\n");
 	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
 	printf("\"-create_cells_bdata - create base data b.bin .\n");
+	printf("\"-create_cell_base - create base mesh for cells.\n");
 	printf("\n");
 
 	MG_LIB_HANDLE gui_lib = mgLoad();
@@ -403,6 +479,10 @@ int main(int argc, char* argv[])
 		else if (strcmp(argv[i], "-create_cells_bdata") == 0)
 		{
 			create_cells_bdata();
+		}
+		else if (strcmp(argv[i], "-create_cell_base") == 0)
+		{
+			create_cell_base();
 		}
 		/*else if (strcmp(argv[i], "-gen_cells_masks") == 0)
 		{

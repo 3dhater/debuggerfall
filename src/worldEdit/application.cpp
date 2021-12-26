@@ -30,14 +30,16 @@
 #include "miGUI.h"
 
 #include "mi/Window/window.h"
-#include "mi/GraphicsSystem/GS.h"
+#include "mi/GraphicsSystem/util.h"
 #include "mi/Event/event.h"
 #include "mi/Scene/common.h"
 #include "mi/Scene/cameraFly.h"
+#include "mi/Classes/material.h"
 
 #include "application.h"
 #include "MapCell.h"
 #include "Player.h"
+#include "ShaderTerrain.h"
 #include "GUI.h"
 
 #include <filesystem>
@@ -45,6 +47,9 @@
 #include <Windows.h>
 
 #define CommandID_TerrainEditor 1
+
+miGSDrawCommand m_cellbaseDrawCmd;
+miMaterial m_cellbaseMaterial;
 
 f32 g_terrainLODDistance_0 = 0.005f;
 f32 g_terrainLODDistance_1 = 0.02f;
@@ -98,6 +103,10 @@ Application::Application()
 
 Application::~Application()
 {
+	//if (m_shaderTerrain) delete m_shaderTerrain;
+	if (m_cellbaseGPU) m_cellbaseGPU->Release();
+	if (m_cellbase) delete m_cellbase;
+
 	if (m_file_gen) fclose(m_file_gen);
 	if (m_file_ids) fclose(m_file_ids);
 	
@@ -131,6 +140,12 @@ bool Application::OnCreate(const char* videoDriver)
 	miLogSetWarningOutput(log_onWarning);
 	miLogSetInfoOutput(log_onInfo);
 
+	{
+		FILE* f = fopen("../data/world/cellbase.bin", "rb");
+		if (!f)
+			return false;
+		fclose(f);
+	}
 	
 	m_file_gen = fopen("../data/world/gen.dpk", "rb");
 	if (!m_file_gen)
@@ -139,10 +154,10 @@ bool Application::OnCreate(const char* videoDriver)
 		return false;
 	}
 
-	m_file_ids = fopen("../data/world/ids.bin", "rb");
+	m_file_ids = fopen("../data/world/b.bin", "rb");
 	if (!m_file_ids)
 	{
-		miLogWriteError("cant open ids.bin\n");
+		miLogWriteError("cant open b.bin\n");
 		return false;
 	}
 	
@@ -198,6 +213,28 @@ bool Application::OnCreate(const char* videoDriver)
 
 vidOk:
 	
+	m_shaderTerrain = new ShaderTerrain;
+	if (!m_shaderTerrain)
+	{
+		MI_PRINT_FAILED;
+		return false;
+	}
+	m_shaderTerrain->m_GPUShader = util::ShaderCreateFromTextFile(
+		m_gs,
+		"../data/shaders/terrain.hlsl",
+		0,
+		"../data/shaders/terrain.hlsl",
+		"vs_5_0",
+		0,
+		"ps_5_0",
+		"VSMain",
+		0,
+		"PSMain",
+		miMeshVertexType::Triangle,
+		m_shaderTerrain
+	);
+	m_shaderTerrain->m_cbVertex = m_shaderTerrain->m_GPUShader->CreateConstantBuffer(sizeof(ShaderTerrain::cbVertex));
+
 	m_GUI->Init();
 	m_GUI->UpdateMatrix((s32)m_windowMain->m_currentSize.x, (s32)m_windowMain->m_currentSize.y);
 
@@ -232,6 +269,29 @@ vidOk:
 	m_player = new Player;
 
 	m_activeCamera = m_player->m_cameraFly;
+
+	// load cellbase
+	{
+		m_cellbase = new miMesh;
+		FILE* f = fopen("../data/world/cellbase.bin", "rb");
+
+		fread(m_cellbase, sizeof(miMesh), 1, f);
+		m_cellbase->m_vertices = (u8*)miMalloc(m_cellbase->m_vCount * m_cellbase->m_stride);
+		m_cellbase->m_indices = (u8*)miMalloc(m_cellbase->m_iCount * sizeof(u32));
+		fread(m_cellbase->m_vertices, m_cellbase->m_vCount * m_cellbase->m_stride, 1, f);
+		fread(m_cellbase->m_indices, m_cellbase->m_iCount * sizeof(u32), 1, f);
+
+		fclose(f);
+
+		miGPUMeshInfo mi;
+		mi.m_meshPtr = m_cellbase;
+		m_cellbaseGPU = m_gs->CreateMesh(&mi);
+		m_cellbaseDrawCmd.m_mesh = m_cellbaseGPU;
+		m_cellbaseDrawCmd.m_material = &m_cellbaseMaterial;
+		m_cellbaseDrawCmd.m_material->m_wireframe = true;
+		//m_cellbaseDrawCmd.m_material->m_cullBackFace = true;
+		m_cellbaseDrawCmd.m_shader = m_shaderTerrain->m_GPUShader;
+	}
 
 	if (!OpenMap())
 		return false;
@@ -309,7 +369,7 @@ void Application::MainLoop()
 			m_cameraWasMoved = true;
 			m_player->m_cameraFly->Rotate(v2f((f32)m_inputContext->mouseMoveDelta.x, (f32)m_inputContext->mouseMoveDelta.y), m_dt);
 			if (mgIsKeyHold(m_inputContext, MG_KEY_LSHIFT) || mgIsKeyHold(m_inputContext, MG_KEY_RSHIFT))
-				m_player->m_cameraFly->m_moveSpeed = 100.f;
+				m_player->m_cameraFly->m_moveSpeed = 1.2f;
 			else
 				m_player->m_cameraFly->m_moveSpeed = m_player->m_cameraFly->m_moveSpeedDefault;
 
@@ -377,6 +437,16 @@ void Application::MainLoop()
 		
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
+
+		Mat4 W;
+		Mat4 WVP;
+		WVP = m_player->m_cameraFly->m_projection * m_player->m_cameraFly->m_view * W;
+		m_cellbaseDrawCmd.m_matProjection = &m_player->m_cameraFly->m_projection;
+		m_cellbaseDrawCmd.m_matView = &m_player->m_cameraFly->m_view;
+		m_cellbaseDrawCmd.m_matWorld = &W;
+		m_cellbaseDrawCmd.m_matWVP = &WVP;
+		m_cellbaseDrawCmd.m_material->m_maps[0].m_GPUTexture = m_mainSystem->GetWhiteTexture();
+		m_gs->Draw(&m_cellbaseDrawCmd, 1);
 
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);

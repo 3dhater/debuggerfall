@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\src\worldEdit\GUI.cpp" />
     <ClCompile Include="..\..\src\worldEdit\MapCell.cpp" />
     <ClCompile Include="..\..\src\worldEdit\Player.cpp" />
+    <ClCompile Include="..\..\src\worldEdit\ShaderTerrain.cpp" />
     <ClCompile Include="..\..\src\worldEdit\worldEdit.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +32,7 @@
     <ClInclude Include="..\..\src\worldEdit\GUI.h" />
     <ClInclude Include="..\..\src\worldEdit\MapCell.h" />
     <ClInclude Include="..\..\src\worldEdit\Player.h" />
+    <ClInclude Include="..\..\src\worldEdit\ShaderTerrain.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
