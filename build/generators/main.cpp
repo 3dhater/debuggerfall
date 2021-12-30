@@ -41,7 +41,7 @@
 void create_cell_base()
 {
 	s32 quadNum = 100;
-	f32 sizeHalf = 0.1f * 0.5f;
+	f32 sizeHalf = 0.25f * 0.5f; // 250 meters
 
 	miMesh * m_cellTemplate = new miMesh;
 	m_cellTemplate->m_indexType = miMeshIndexType::u32;
@@ -57,7 +57,7 @@ void create_cell_base()
 	miVertexTriangle* vPtr = (miVertexTriangle*)m_cellTemplate->m_vertices;
 	u32* iPtr = (u32*)m_cellTemplate->m_indices;
 
-	f32 quadSize = 0.001f;
+	f32 quadSize = 0.0025f;
 	u32 vertexIndexCounter = 0;
 
 	v3f pos(-sizeHalf, 0.f, -sizeHalf);	
@@ -113,7 +113,27 @@ void create_cell_base()
 
 void gen_basic_cells()
 {
-	miStringA str;
+	FILE * f = fopen("../data/world/land.bin", "wb");
+	if (f)
+	{
+		for (u32 iy = 0; iy < 4000; ++iy)
+		{
+			for (u32 ix = 0; ix < 4000; ++ix)
+			{
+				CellData cd;
+				memset(&cd, 0, sizeof(CellData));
+				fwrite(&cd, sizeof(CellData), 1, f);
+			}
+			printf("%i : 4000\n", iy);
+			fflush(f);
+		}
+		fclose(f);
+	}
+	else
+	{
+		printf("Can't open file\n");
+	}
+	/*miStringA str;
 	str += "../data/world/";
 	str += "gen.dpk";
 
@@ -126,14 +146,14 @@ void gen_basic_cells()
 	auto res = dpk_open(str.data(), &dpk);
 	if (res == DPK_ER_OK)
 	{
-		for (u32 iy = 0; iy < 1000; ++iy)
+		for (u32 iy = 0; iy < 10000; ++iy)
 		{
-			for (u32 ix = 0; ix < 1000; ++ix)
+			for (u32 ix = 0; ix < 10000; ++ix)
 			{
 				printf("Create cell %i.%i\n", iy, ix);
 
 				miStringA name;
-				name += ix;
+				name.append_hex(ix);
 				int data = 0;
 				dpk_add_data(&dpk, &data, sizeof(data), sizeof(data), DPK_CMP_NOCOMPRESS, name.data());
 			}
@@ -144,7 +164,7 @@ void gen_basic_cells()
 			printf("DPK SAVE ERROR: %i\n", res);
 		}
 		dpk_close(&dpk);
-	}
+	}*/
 }
 
 //void gen_cells_masks()
@@ -359,73 +379,73 @@ void print_dpk(const char* fileName)
 	}
 }
 
-void create_cells_bdata()
-{
-	FILE* f = fopen("../data/world/b.bin", "wb");
-	if (f)
-	{
-		CellBaseData bd;
-		int id = 0;
-		f32 pos_x = -500.f;
-		f32 pos_z = -500.f;
-		for (int y = 0; y < 1000; ++y)
-		{
-			for (int x = 0; x < 1000; ++x)
-			{
-				bd.ids[0] = id;
-				bd.ids[1] = bd.ids[0] + 1;
-				bd.ids[2] = bd.ids[0] - 1;
-
-				bd.ids[3] = bd.ids[0] + 1000 + 1;
-				bd.ids[4] = bd.ids[3] - 1;
-				bd.ids[5] = bd.ids[4] - 1;
-
-				bd.ids[6] = bd.ids[0] - 1000 + 1;
-				bd.ids[7] = bd.ids[6] - 1;
-				bd.ids[8] = bd.ids[7] - 1;
-
-				if (x == 0)
-				{
-					bd.ids[5] = -1;
-					bd.ids[2] = -1;
-					bd.ids[8] = -1;
-				}
-				else if (x == 999)
-				{
-					bd.ids[3] = -1;
-					bd.ids[1] = -1;
-					bd.ids[6] = -1;
-				}
-
-				if (y == 0)
-				{
-					bd.ids[6] = -1;
-					bd.ids[7] = -1;
-					bd.ids[8] = -1;
-				}
-				else if (y == 999)
-				{
-					bd.ids[3] = -1;
-					bd.ids[4] = -1;
-					bd.ids[5] = -1;
-				}
-
-				// позиции ячеек начинаются с самого отрицательного значения.
-				bd.pos[0] = pos_x;
-				bd.pos[1] = pos_z;
-
-				pos_x += 1.f;
-
-				++id;
-				fwrite(&bd, sizeof(CellBaseData), 1, f);
-			}
-			pos_x = -500.f;
-			pos_z += 1.f;
-		}
-
-		fclose(f);
-	}
-}
+//void create_cells_bdata()
+//{
+//	FILE* f = fopen("../data/world/b.bin", "wb");
+//	if (f)
+//	{
+//		CellBaseData bd;
+//		int id = 0;
+//		f32 pos_x = -500.f;
+//		f32 pos_z = -500.f;
+//		for (int y = 0; y < 1000; ++y)
+//		{
+//			for (int x = 0; x < 1000; ++x)
+//			{
+//				bd.ids[0] = id;
+//				bd.ids[1] = bd.ids[0] + 1;
+//				bd.ids[2] = bd.ids[0] - 1;
+//
+//				bd.ids[3] = bd.ids[0] + 1000 + 1;
+//				bd.ids[4] = bd.ids[3] - 1;
+//				bd.ids[5] = bd.ids[4] - 1;
+//
+//				bd.ids[6] = bd.ids[0] - 1000 + 1;
+//				bd.ids[7] = bd.ids[6] - 1;
+//				bd.ids[8] = bd.ids[7] - 1;
+//
+//				if (x == 0)
+//				{
+//					bd.ids[5] = -1;
+//					bd.ids[2] = -1;
+//					bd.ids[8] = -1;
+//				}
+//				else if (x == 999)
+//				{
+//					bd.ids[3] = -1;
+//					bd.ids[1] = -1;
+//					bd.ids[6] = -1;
+//				}
+//
+//				if (y == 0)
+//				{
+//					bd.ids[6] = -1;
+//					bd.ids[7] = -1;
+//					bd.ids[8] = -1;
+//				}
+//				else if (y == 999)
+//				{
+//					bd.ids[3] = -1;
+//					bd.ids[4] = -1;
+//					bd.ids[5] = -1;
+//				}
+//
+//				// позиции ячеек начинаются с самого отрицательного значения.
+//				bd.pos[0] = pos_x;
+//				bd.pos[1] = pos_z;
+//
+//				pos_x += 1.f;
+//
+//				++id;
+//				fwrite(&bd, sizeof(CellBaseData), 1, f);
+//			}
+//			pos_x = -500.f;
+//			pos_z += 1.f;
+//		}
+//
+//		fclose(f);
+//	}
+//}
 
 int main(int argc, char* argv[])
 {
@@ -434,7 +454,7 @@ int main(int argc, char* argv[])
 	//printf("\"-gen_cells_masks\" - create mask/PNG files for each cell.\n");
 	//printf("\"-gen_regions\" - create regions.\n");
 	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
-	printf("\"-create_cells_bdata - create base data b.bin .\n");
+	//printf("\"-create_cells_bdata - create base data b.bin .\n");
 	printf("\"-create_cell_base - create base mesh for cells.\n");
 	printf("\n");
 
@@ -476,10 +496,10 @@ int main(int argc, char* argv[])
 		{
 			gen_basic_cells();
 		}
-		else if (strcmp(argv[i], "-create_cells_bdata") == 0)
+		/*else if (strcmp(argv[i], "-create_cells_bdata") == 0)
 		{
 			create_cells_bdata();
-		}
+		}*/
 		else if (strcmp(argv[i], "-create_cell_base") == 0)
 		{
 			create_cell_base();

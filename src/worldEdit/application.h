@@ -33,8 +33,8 @@ public:
 	miCameraFly* m_activeCamera = 0;
 	ApplicationGUI* m_GUI = 0;
 
-	FILE* m_file_gen = 0;
-	FILE* m_file_ids = 0; // base data
+	//FILE* m_file_gen = 0;
+	//FILE* m_file_ids = 0; // base data
 
 
 	bool OnCreate(const char*);
@@ -65,7 +65,7 @@ public:
 	void FindLODs();
 
 	miMesh* m_cellbase = 0; // square 250x250 meters
-	miGPUMesh* m_cellbaseGPU = 0;
+	//miGPUMesh* m_cellbaseGPU = 0;
 	ShaderTerrain* m_shaderTerrain = 0;
 };
 

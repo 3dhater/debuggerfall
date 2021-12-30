@@ -32,18 +32,27 @@
 #include <map>
 #include <string>
 
-struct CellGenInfo
-{
-	int type;
-	int flags;
-	int data[8];
-};
+#include "umHalf.h"
 
-struct CellBaseData
+// fixed size data for cell
+#pragma pack(push, 1)
+struct CellGenData
 {
-	int ids[9];
-	float pos[2];
+	u8 genType;
+	u8 flags;
+	//v3f pos;
+	half pos[3];
+	f32 f32Data;
+	half f16Data;
+	s32 iData;
 };
+struct CellData
+{
+	CellGenData genData[20];
+	int ids[9];
+	v2f pos;
+};
+#pragma pack(pop)
 
 struct TerrainVertex
 {
@@ -81,10 +90,10 @@ public:
 
 		void Set(const v3f& position, f32 size)
 		{
+			sizeof(CellData);
 			m_v1 = position;
 			m_v1.x -= size * 0.5f;
 			m_v1.z -= size * 0.5f;
-
 			m_v2 = m_v1;
 			m_v2.z += size;
 
@@ -97,8 +106,12 @@ public:
 		}
 	};
 
-	miGPUMesh* m_meshGPU0[16]; // 4x4
-	miGPUMesh* m_meshGPU1[16];
+	/*
+		1 cell is 10x10 squares
+	*/
+
+	miGPUMesh* m_meshGPU0[100]; // hi detailed
+	miGPUMesh* m_meshGPU1[100]; // low
 	v3f m_position;
 
 	Aabb m_aabb;
@@ -117,7 +130,7 @@ public:
 	// -1 - not visible
 	// 0 - lod0
 	// 1 - lod1
-	s32 m_activeLOD[16];
+	s32 m_activeLOD[100];
 };
 
 

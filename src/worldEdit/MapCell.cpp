@@ -1,16 +1,17 @@
 ﻿#include "mi/MainSystem/MainSystem.h"
 #include "mi/Mesh/mesh.h"
-#include "mi/GraphicsSystem/GPUMesh.h"
+#include "mi/GraphicsSystem/util.h"
 
 #include "application.h"
 #include "MapCell.h"
 
 #include <filesystem>
 
+extern Application* g_app;
 
 MapCell::MapCell() 
 {
-	for (u32 i = 0; i < 16; ++i)
+	for (u32 i = 0; i < 100; ++i)
 	{
 		m_meshGPU0[i] = 0;
 		m_meshGPU1[i] = 0;
@@ -20,28 +21,51 @@ MapCell::MapCell()
 
 MapCell::~MapCell()
 {
-	for (u32 i = 0; i < 16; ++i)
-	{
-		if (m_meshGPU0[i]) miDestroy(m_meshGPU0[i]);
-		if (m_meshGPU1[i]) miDestroy(m_meshGPU1[i]);
-	}
+	Clear();
 }
 
 void MapCell::Clear()
 {
 	m_id = -1;
+	for (u32 i = 0; i < 100; ++i)
+	{
+		if (m_meshGPU0[i])
+		{
+			miDestroy(m_meshGPU0[i]);
+			m_meshGPU0[i] = 0;
+		}
+		
+		if (m_meshGPU1[i])
+		{
+			miDestroy(m_meshGPU1[i]);
+			m_meshGPU1[i] = 0;
+		}
+	}
 }
 
 void MapCell::InitNew(s32 id, f32* pos)
 {
 	if (m_id != -1 || id == -1)
 		return;
+	
+	Clear();
 
 	m_position.x = pos[0];
 	m_position.y = 0.f;
 	m_position.z = pos[1];
 
 	m_id = id;
+
+	//g_app->m_file_gen
+
+	miGPUMeshInfo mi;
+	mi.m_meshPtr = g_app->m_cellbase;
+	
+	for (u32 i = 0; i < 100; ++i)
+	{
+		m_meshGPU0[i] = g_app->m_gs->CreateMesh(&mi);
+	}
+	printf("as");
 }
 
 f32 MapCell_getY(

@@ -48,8 +48,8 @@
 
 #define CommandID_TerrainEditor 1
 
-miGSDrawCommand m_cellbaseDrawCmd;
-miMaterial m_cellbaseMaterial;
+//miGSDrawCommand m_cellbaseDrawCmd;
+//miMaterial m_cellbaseMaterial;
 
 f32 g_terrainLODDistance_0 = 0.005f;
 f32 g_terrainLODDistance_1 = 0.02f;
@@ -103,12 +103,12 @@ Application::Application()
 
 Application::~Application()
 {
-	//if (m_shaderTerrain) delete m_shaderTerrain;
-	if (m_cellbaseGPU) m_cellbaseGPU->Release();
+	if (m_shaderTerrain) delete m_shaderTerrain;
+	//if (m_cellbaseGPU) m_cellbaseGPU->Release();
 	if (m_cellbase) delete m_cellbase;
 
-	if (m_file_gen) fclose(m_file_gen);
-	if (m_file_ids) fclose(m_file_ids);
+	/*if (m_file_gen) fclose(m_file_gen);
+	if (m_file_ids) fclose(m_file_ids);*/
 	
 	if (m_player) 
 		delete m_player;
@@ -147,7 +147,7 @@ bool Application::OnCreate(const char* videoDriver)
 		fclose(f);
 	}
 	
-	m_file_gen = fopen("../data/world/gen.dpk", "rb");
+	/*m_file_gen = fopen("../data/world/gen.dpk", "rb");
 	if (!m_file_gen)
 	{
 		miLogWriteError("cant open gen.dpk\n");
@@ -159,7 +159,7 @@ bool Application::OnCreate(const char* videoDriver)
 	{
 		miLogWriteError("cant open b.bin\n");
 		return false;
-	}
+	}*/
 	
 	for (int i = 0; i < 9; ++i)
 	{
@@ -283,14 +283,14 @@ vidOk:
 
 		fclose(f);
 
-		miGPUMeshInfo mi;
-		mi.m_meshPtr = m_cellbase;
-		m_cellbaseGPU = m_gs->CreateMesh(&mi);
-		m_cellbaseDrawCmd.m_mesh = m_cellbaseGPU;
-		m_cellbaseDrawCmd.m_material = &m_cellbaseMaterial;
-		m_cellbaseDrawCmd.m_material->m_wireframe = true;
-		//m_cellbaseDrawCmd.m_material->m_cullBackFace = true;
-		m_cellbaseDrawCmd.m_shader = m_shaderTerrain->m_GPUShader;
+		//miGPUMeshInfo mi;
+		//mi.m_meshPtr = m_cellbase;
+		//m_cellbaseGPU = m_gs->CreateMesh(&mi);
+		//m_cellbaseDrawCmd.m_mesh = m_cellbaseGPU;
+		//m_cellbaseDrawCmd.m_material = &m_cellbaseMaterial;
+		//m_cellbaseDrawCmd.m_material->m_wireframe = true;
+		////m_cellbaseDrawCmd.m_material->m_cullBackFace = true;
+		//m_cellbaseDrawCmd.m_shader = m_shaderTerrain->m_GPUShader;
 	}
 
 	if (!OpenMap())
@@ -438,7 +438,7 @@ void Application::MainLoop()
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
 
-		Mat4 W;
+		/*Mat4 W;
 		Mat4 WVP;
 		WVP = m_player->m_cameraFly->m_projection * m_player->m_cameraFly->m_view * W;
 		m_cellbaseDrawCmd.m_matProjection = &m_player->m_cameraFly->m_projection;
@@ -446,7 +446,7 @@ void Application::MainLoop()
 		m_cellbaseDrawCmd.m_matWorld = &W;
 		m_cellbaseDrawCmd.m_matWVP = &WVP;
 		m_cellbaseDrawCmd.m_material->m_maps[0].m_GPUTexture = m_mainSystem->GetWhiteTexture();
-		m_gs->Draw(&m_cellbaseDrawCmd, 1);
+		m_gs->Draw(&m_cellbaseDrawCmd, 1);*/
 
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
@@ -739,14 +739,11 @@ void Application::_updateMapCell()
 		* [1][0][2]
 		* [6][7][8]
 		*/
-		/*s32 newIDs[9];
-		float newPos[3];*/
-		CellBaseData cbd;
+		/*CellBaseData cbd;
 		CellBaseData cbd_pos;
 
 		fseek(m_file_ids, m_player->m_cellID * sizeof(CellBaseData), SEEK_SET);
-		fread(&cbd, sizeof(cbd), 1, m_file_ids);
-		//fread(&newPos[0], sizeof(float) * 3, 1, m_file_ids);
+		fread(&cbd, sizeof(cbd), 1, m_file_ids);*/
 
 		/*printf("%i %i %i\n%i %i %i\n%i %i %i\n\n",
 			newIDs[5], newIDs[4], newIDs[3],
@@ -763,7 +760,7 @@ void Application::_updateMapCell()
 		*   Далее беру ячейку, если m_id равен -1 то инициализирую эту ячейку новыми
 		*   данными и присваиваю новый m_id
 		*/
-		for (s32 i = 0; i < 9; ++i)
+		/*for (s32 i = 0; i < 9; ++i)
 		{
 			if (m_mapCells.m_data[i]->m_id != -1)
 			{
@@ -774,35 +771,34 @@ void Application::_updateMapCell()
 					{
 						found = true;
 						cbd.ids[i2] = -1;
-					//	break;
 					}
 				}
 				if(!found)
 					m_mapCells.m_data[i]->Clear();
 			}
-		}
+		}*/
 		
-		f32 newPos[3];
-		for (s32 i = 0; i < 9; ++i)
-		{
-			if (cbd.ids[i] != -1) // горантированно не инициализированная ячейка, так как ранее вставили newIDs[i2] = -1;
-			{
-				// беру свободную ячейку и инициализирую
-				for (s32 i2 = 0; i2 < 9; ++i2)
-				{
-					if (m_mapCells.m_data[i2]->m_id == -1)
-					{
-						// read position
-						fseek(m_file_ids, cbd.ids[i] * sizeof(CellBaseData), SEEK_SET);
-						fread(&cbd_pos, sizeof(cbd_pos), 1, m_file_ids);
+		//f32 newPos[3];
+		//for (s32 i = 0; i < 9; ++i)
+		//{
+		//	if (cbd.ids[i] != -1) // горантированно не инициализированная ячейка, так как ранее вставили newIDs[i2] = -1;
+		//	{
+		//		// беру свободную ячейку и инициализирую
+		//		for (s32 i2 = 0; i2 < 9; ++i2)
+		//		{
+		//			if (m_mapCells.m_data[i2]->m_id == -1)
+		//			{
+		//				// read position
+		//				fseek(m_file_ids, cbd.ids[i] * sizeof(CellBaseData), SEEK_SET);
+		//				fread(&cbd_pos, sizeof(cbd_pos), 1, m_file_ids);
 
-						m_mapCells.m_data[i2]->InitNew(cbd.ids[i], cbd_pos.pos);
-						break;
-					}
-				}
-			}
-		}
+		//				m_mapCells.m_data[i2]->InitNew(cbd.ids[i], cbd_pos.pos);
+		//				break;
+		//			}
+		//		}
+		//	}
+		//}
 
-		prev_ID = m_player->m_cellID;
+		//prev_ID = m_player->m_cellID;
 	}
 }
