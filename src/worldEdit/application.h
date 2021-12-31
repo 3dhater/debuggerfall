@@ -16,6 +16,8 @@ class Player;
 class ApplicationGUI;
 class miMesh;
 class ShaderTerrain;
+struct miGPUDrawCommand;
+
 
 class Application
 {
@@ -33,7 +35,7 @@ public:
 	miCameraFly* m_activeCamera = 0;
 	ApplicationGUI* m_GUI = 0;
 
-	//FILE* m_file_gen = 0;
+	FILE* m_file_land = 0;
 	//FILE* m_file_ids = 0; // base data
 
 
@@ -48,13 +50,13 @@ public:
 	void GenerateWorld();
 	void ReadWorld();
 
-	// need to find cell ID for player, and init cell
-	bool m_needUpdateMapCell = true;
+	bool m_needUpdateMapCell = true;// need to find cell ID for player, and init cell
+	bool m_needUpdateMapView = true;
 	void _updateMapCell();
 
 	//MapCell* m_testMapCell = 0;
 	miArray<MapCell*> m_mapCells;
-	//miArray<MapCell*> m_visibleMapCells;
+	miArray<miGPUDrawCommand*> m_mapDrawCommands;
 	void DrawMapCell(MapCell*);
 	void FrustumCullMap();
 

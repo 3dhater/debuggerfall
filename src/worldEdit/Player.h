@@ -1,6 +1,8 @@
 ﻿#ifndef _PLAYER_H_
 #define _PLAYER_H_
 
+#include "MapCell.h"
+
 class Player
 {
 public:
@@ -8,6 +10,8 @@ public:
 	~Player();
 
 	s32 m_cellID = -1;
+	CellData m_cellData;
+
 
 	v3f m_position;
 	miCameraFly* m_cameraFly = 0;

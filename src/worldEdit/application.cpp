@@ -43,6 +43,7 @@
 #include "GUI.h"
 
 #include <filesystem>
+#include <random>
 
 #include <Windows.h>
 
@@ -58,6 +59,8 @@ f32 g_terrainLODDistance_3 = 0.04f;
 //f32 g_terrainLODDistance_4 = 0.025f;
 
 Application* g_app = nullptr;
+
+v2f g_testCellPosition;
 
 void log_onError(const char* message) {
 	fprintf(stderr, message);
@@ -98,6 +101,13 @@ void window_callbackOnCommand(s32 commandID) {
 
 Application::Application()
 {
+	/*std::default_random_engine generator;
+	std::uniform_int_distribution<int> int_distribution(0, 1);
+	std::uniform_real_distribution<f64> float_distribution(-0.125, 0.125);
+	
+	int int_dice_roll = int_distribution(generator);
+	f32 float_dice_roll = float_distribution(generator);*/
+
 	g_app = this;
 }
 
@@ -141,20 +151,20 @@ bool Application::OnCreate(const char* videoDriver)
 	miLogSetInfoOutput(log_onInfo);
 
 	{
-		FILE* f = fopen("../data/world/cellbase.bin", "rb");
+		FILE* f = fopen("../data/world/cellbase.bin", "r+");
 		if (!f)
 			return false;
 		fclose(f);
 	}
 	
-	/*m_file_gen = fopen("../data/world/gen.dpk", "rb");
-	if (!m_file_gen)
+	m_file_land = fopen("../data/world/land.bin", "rb");
+	if (!m_file_land)
 	{
-		miLogWriteError("cant open gen.dpk\n");
+		miLogWriteError("cant open land.bin\n");
 		return false;
 	}
 
-	m_file_ids = fopen("../data/world/b.bin", "rb");
+	/*m_file_ids = fopen("../data/world/b.bin", "rb");
 	if (!m_file_ids)
 	{
 		miLogWriteError("cant open b.bin\n");
@@ -368,8 +378,12 @@ void Application::MainLoop()
 		{
 			m_cameraWasMoved = true;
 			m_player->m_cameraFly->Rotate(v2f((f32)m_inputContext->mouseMoveDelta.x, (f32)m_inputContext->mouseMoveDelta.y), m_dt);
+			
+			if(m_inputContext->mouseMoveDelta.x != 0.f || m_inputContext->mouseMoveDelta.y != 0.f)
+				m_needUpdateMapView = true;
+
 			if (mgIsKeyHold(m_inputContext, MG_KEY_LSHIFT) || mgIsKeyHold(m_inputContext, MG_KEY_RSHIFT))
-				m_player->m_cameraFly->m_moveSpeed = 1.2f;
+				m_player->m_cameraFly->m_moveSpeed = 0.02f;
 			else
 				m_player->m_cameraFly->m_moveSpeed = m_player->m_cameraFly->m_moveSpeedDefault;
 
@@ -403,11 +417,11 @@ void Application::MainLoop()
 
 	//	FindCurrentCellID();
 
-		if (m_cameraWasMoved)
+		if (m_needUpdateMapCell || m_needUpdateMapView)
 		{
 			m_cameraWasMoved = false;
 			FrustumCullMap();
-			FindLODs();
+			//FindLODs();
 		}
 
 //		m_GUI->m_context->Update(m_dt);
@@ -450,6 +464,17 @@ void Application::MainLoop()
 
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
+
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		
+		if (m_mapDrawCommands.m_size)
+		{
+			m_gs->Draw(&m_mapDrawCommands, m_mapDrawCommands.m_size);
+		}
+
 ///		m_gs->DrawRectangle(v4f(0.f, 0.f, 100.f, 100.f), ColorRed, ColorBlue, );
 
 		mgDraw(m_GUI->m_guiContext);
@@ -636,6 +661,27 @@ void Application::FindLODs()
 
 void Application::FrustumCullMap()
 {
+	m_needUpdateMapView = false;
+
+	m_mapDrawCommands.clear();
+	for (s32 i = 0; i < 9; ++i)
+	{
+		if (m_mapCells.m_data[i]->m_id != -1)
+		{
+			if (m_activeCamera->m_frust.AABBInFrustum(
+				m_mapCells.m_data[i]->m_aabb, 
+				m_mapCells.m_data[i]->m_position)
+				)
+			{
+				m_mapDrawCommands.push_back(&m_mapCells.m_data[i]->m_drawCommand);
+				
+				m_mapCells.m_data[i]->m_WVP = 
+					(*m_mapCells.m_data[i]->m_drawCommand.m_matProjection) *
+					(*m_mapCells.m_data[i]->m_drawCommand.m_matView) *
+					(*m_mapCells.m_data[i]->m_drawCommand.m_matWorld);
+			}
+		}
+	}
 	//m_visibleMapCells.clear();
 	//
 	//for (u32 i = 0; i < m_mapCells.m_size; ++i)
@@ -715,40 +761,40 @@ void Application::_updateMapCell()
 	s32 y = 0;
 
 	if (pos_x > 0.0)
-		x = (s32)std::ceil(pos_x);
+		x = (s32)std::ceil(pos_x / 0.25);
 
 	if (pos_y > 0.0)
-		y = (s32)std::ceil(pos_y);
+		y = (s32)std::ceil(pos_y / 0.25);
 
-	s32 real_x = x;
-	s32 real_y = y;
+	//s32 real_x = x;
+	//s32 real_y = y;
 
-	if (x > 999) x = 999;
-	if (y > 999) y = 999;
+	if (x > 3999) x = 3999;
+	if (y > 3999) y = 3999;
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
 
-	m_player->m_cellID = (y * 1000) + x;
+	m_player->m_cellID = (y * 4000) + x;
+	m_GUI->SetTextCellID(m_player->m_cellID);
+	m_GUI->SetTextPosition(m_player->m_position);
 
 	static s32 prev_ID = -1;
 
 	if (m_player->m_cellID != prev_ID)
 	{
+		if (_fseeki64(m_file_land, m_player->m_cellID * sizeof(CellData), SEEK_SET))
+			printf("fseek error\n");
+		fread(&m_player->m_cellData, sizeof(CellData), 1, m_file_land);
+		g_testCellPosition = m_player->m_cellData.pos;
+		//g_testCellPosition.x -= 0.125f;
+		//g_testCellPosition.y -= 0.125f;
+
 		/*
 		* [3][4][5]
 		* [1][0][2]
 		* [6][7][8]
 		*/
-		/*CellBaseData cbd;
-		CellBaseData cbd_pos;
-
-		fseek(m_file_ids, m_player->m_cellID * sizeof(CellBaseData), SEEK_SET);
-		fread(&cbd, sizeof(cbd), 1, m_file_ids);*/
-
-		/*printf("%i %i %i\n%i %i %i\n%i %i %i\n\n",
-			newIDs[5], newIDs[4], newIDs[3],
-			newIDs[2], newIDs[0], newIDs[1],
-			newIDs[8], newIDs[7], newIDs[6]);*/
+		
 
 		/*
 		* Сначала прохожусь по массиву с ячейками.
@@ -760,45 +806,60 @@ void Application::_updateMapCell()
 		*   Далее беру ячейку, если m_id равен -1 то инициализирую эту ячейку новыми
 		*   данными и присваиваю новый m_id
 		*/
-		/*for (s32 i = 0; i < 9; ++i)
+		for (s32 i = 0; i < 9; ++i)
 		{
 			if (m_mapCells.m_data[i]->m_id != -1)
 			{
 				bool found = false;
 				for (s32 i2 = 0; i2 < 9; ++i2)
 				{
-					if (cbd.ids[i2] == m_mapCells.m_data[i]->m_id)
+					if (m_player->m_cellData.ids[i2] == m_mapCells.m_data[i]->m_id)
 					{
 						found = true;
-						cbd.ids[i2] = -1;
+						m_player->m_cellData.ids[i2] = -1; // чтобы потом пропустить это, чтобы небыло повторной инициализации
 					}
 				}
 				if(!found)
 					m_mapCells.m_data[i]->Clear();
 			}
-		}*/
+		}
 		
-		//f32 newPos[3];
-		//for (s32 i = 0; i < 9; ++i)
-		//{
-		//	if (cbd.ids[i] != -1) // горантированно не инициализированная ячейка, так как ранее вставили newIDs[i2] = -1;
-		//	{
-		//		// беру свободную ячейку и инициализирую
-		//		for (s32 i2 = 0; i2 < 9; ++i2)
-		//		{
-		//			if (m_mapCells.m_data[i2]->m_id == -1)
-		//			{
-		//				// read position
-		//				fseek(m_file_ids, cbd.ids[i] * sizeof(CellBaseData), SEEK_SET);
-		//				fread(&cbd_pos, sizeof(cbd_pos), 1, m_file_ids);
+		static miArray<MapCell*> cellsInit;
+		cellsInit.clear();
+		for (s32 i = 0; i < 9; ++i)
+		{
+			if (m_player->m_cellData.ids[i] != -1) // горантированно не инициализированная ячейка, так как ранее вставили newIDs[i2] = -1;
+			{
+				// беру свободную ячейку и инициализирую
+				for (s32 i2 = 0; i2 < 9; ++i2)
+				{
+					if (m_mapCells.m_data[i2]->m_id == -1)
+					{
+						// read position
+						_fseeki64(m_file_land, m_player->m_cellData.ids[i] * sizeof(CellData), SEEK_SET);
+						fread(&m_mapCells.m_data[i2]->m_cellData, sizeof(CellData), 1, m_file_land);
+						
+						m_mapCells.m_data[i2]->m_id = m_player->m_cellData.ids[i];
 
-		//				m_mapCells.m_data[i2]->InitNew(cbd.ids[i], cbd_pos.pos);
-		//				break;
-		//			}
-		//		}
-		//	}
-		//}
+						cellsInit.push_back(m_mapCells.m_data[i2]);
+						//m_mapCells.m_data[i2]->InitNew(m_player->m_cellData.ids[i]/*, &m_mapCells.m_data[i2]->m_cellData.pos.x*/);
+						//m_mapCells.m_data[i2]->InitNew();
+						break;
+					}
+				}
+			}
+		}
 
-		//prev_ID = m_player->m_cellID;
+		// собрать gendata и потом инициализировать 
+
+
+		for (s32 i = 0; i < cellsInit.m_size; ++i)
+		{
+			cellsInit.m_data[i]->InitNew();
+		//	printf("a");
+		}
+		//printf(" : %i\n", cellsInit.m_size);
+
+		prev_ID = m_player->m_cellID;
 	}
 }

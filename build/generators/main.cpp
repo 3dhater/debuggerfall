@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <random>
 
 #include "mi/MainSystem/MainSystem.h"
 #include "mi/Mesh/mesh.h"
@@ -113,19 +114,107 @@ void create_cell_base()
 
 void gen_basic_cells()
 {
-	FILE * f = fopen("../data/world/land.bin", "wb");
+	FILE* f = fopen("../data/world/land.bin", "wb");
 	if (f)
 	{
+		std::default_random_engine generator;
+		std::uniform_int_distribution<int> int_distribution(0, 1);
+		std::uniform_real_distribution<f64> position_distribution(-0.125, 0.125);
+		std::uniform_real_distribution<f64> moveUpDown_distribution(0., 0.005);
+		std::uniform_real_distribution<f64> moveUpDownRadius_distribution(0., 0.05);
+
+		int int_dice_roll = int_distribution(generator);
+		f32 position_dice_roll = position_distribution(generator);
+
+		f32 pos_x_origin = -500.0f - 0.125f;
+		f32 pos_z_origin = -500.0f - 0.125f;
+		f32 pos_x = pos_x_origin;
+		f32 pos_z = pos_z_origin;
+		int id = 0;
+
 		for (u32 iy = 0; iy < 4000; ++iy)
 		{
 			for (u32 ix = 0; ix < 4000; ++ix)
 			{
 				CellData cd;
 				memset(&cd, 0, sizeof(CellData));
+
+				cd.ids[0] = id;
+				cd.ids[1] = cd.ids[0] + 1;
+				cd.ids[2] = cd.ids[0] - 1;
+
+				cd.ids[3] = cd.ids[0] + 4000 + 1;
+				cd.ids[4] = cd.ids[3] - 1;
+				cd.ids[5] = cd.ids[4] - 1;
+
+				cd.ids[6] = cd.ids[0] - 4000 + 1;
+				cd.ids[7] = cd.ids[6] - 1;
+				cd.ids[8] = cd.ids[7] - 1;
+
+				if (ix == 0)
+				{
+					cd.ids[5] = -1;
+					cd.ids[2] = -1;
+					cd.ids[8] = -1;
+				}
+				else if (ix == 3999)
+				{
+					cd.ids[3] = -1;
+					cd.ids[1] = -1;
+					cd.ids[6] = -1;
+				}
+
+				if (iy == 0)
+				{
+					cd.ids[6] = -1;
+					cd.ids[7] = -1;
+					cd.ids[8] = -1;
+				}
+				else if (iy == 3999)
+				{
+					cd.ids[3] = -1;
+					cd.ids[4] = -1;
+					cd.ids[5] = -1;
+				}
+				cd.pos.x = pos_x;
+				cd.pos.y = pos_z;
+
+				// add random CellGenData
+				for (int gi = 0; gi < CellGenDataMax; ++gi)
+				{
+					cd.genData[gi].genType = int_distribution(generator);
+					if (cd.genData[gi].genType > (u8)CellGenType_count)
+						cd.genData[gi].genType = 0;
+
+					cd.genData[gi].pos[0] = (float)position_distribution(generator);
+					cd.genData[gi].pos[2] = (float)position_distribution(generator);
+
+					switch (cd.genData[gi].genType)
+					{
+					case CellGenType_MoveDown:
+					case CellGenType_MoveUp:
+						cd.genData[gi].pos[1] = (float)moveUpDown_distribution(generator);
+						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
+						break;
+					case CellGenType_count:
+					default:
+						break;
+					}
+
+					if(gi > 5)
+						cd.genData[gi].genType = CellGenType_count;
+				}
+				
+				pos_x += 0.25f;
+				
+				++id;
+
 				fwrite(&cd, sizeof(CellData), 1, f);
 			}
 			printf("%i : 4000\n", iy);
-			fflush(f);
+			//fflush(f);
+			pos_x = pos_x_origin;
+			pos_z += 0.25f;
 		}
 		fclose(f);
 	}

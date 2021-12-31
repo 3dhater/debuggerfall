@@ -128,13 +128,21 @@ void ApplicationGUI::Init()
 
 	mgPoint position;
 
-	m_font1 = mgCreateFont(m_guiContext, "Noto", 0, 12, "Noto");
+	m_font1 = mgCreateFont(m_guiContext, "Noto Sans", 0, 10, "Noto Sans");
 	if (!m_font1)
 		miLogWriteError("Can't create font!\n");
 	
 	mgPointSet(&position, 0, 0);
 	m_textFPS = mgCreateText(m_guiContext, &position, L"FPS: ", m_font1);
 	((mgElementText*)m_textFPS)->color.a = 1.f;
+
+	mgPointSet(&position, 0, 16);
+	m_textCELL_ID = mgCreateText(m_guiContext, &position, L"Cell ID: ", m_font1);
+	((mgElementText*)m_textCELL_ID)->color.a = 1.f;
+
+	mgPointSet(&position, 0, 32);
+	m_textPOSITION = mgCreateText(m_guiContext, &position, L" ", m_font1);
+	((mgElementText*)m_textCELL_ID)->color.a = 1.f;
 
 	//m_panel_terrain = m_context->CreatePanel(v2f(0.f, 0.f), v2f(200.f, 800.f));
 	//m_panel_terrain->m_color = ColorWhite;
@@ -162,6 +170,24 @@ void ApplicationGUI::Init()
 	//}
 
 	//m_panel_debug->SetVisible(false);
+}
+
+void ApplicationGUI::SetTextCellID(s32 id)
+{
+	static wchar_t fps_buf[30];
+	fps_buf[29] = 0;
+	swprintf(fps_buf, L"Cell ID: %i", id);
+	((mgElementText*)m_textCELL_ID->implementation)->text = fps_buf;
+	((mgElementText*)m_textCELL_ID->implementation)->textLen = wcslen(fps_buf);
+}
+
+void ApplicationGUI::SetTextPosition(const v3f& pos)
+{
+	static wchar_t fps_buf[100];
+	fps_buf[99] = 0;
+	swprintf(fps_buf, L"Pos.: %f %f %f", pos.x, pos.y, pos.z);
+	((mgElementText*)m_textPOSITION->implementation)->text = fps_buf;
+	((mgElementText*)m_textPOSITION->implementation)->textLen = wcslen(fps_buf);
 }
 
 void ApplicationGUI::SetTextFPS(s32 fps)

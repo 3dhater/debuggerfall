@@ -34,25 +34,39 @@
 
 #include "umHalf.h"
 
+#include "mi/Classes/material.h"
+#include "mi/GraphicsSystem/util.h"
+
+#define CellGenDataMax 20
+
+enum CellGenType
+{
+	CellGenType_MoveUp,  // pos[1], f32Data1 for radius
+	CellGenType_MoveDown,// pos[1], f32Data1 for radius
+
+	CellGenType_count
+};
+
 // fixed size data for cell
-#pragma pack(push, 1)
 struct CellGenData
 {
 	u8 genType;
+
+	// 0x1 - make road with next
 	u8 flags;
+
 	//v3f pos;
 	half pos[3];
-	f32 f32Data;
-	half f16Data;
+	f32 f32Data1;
+	f32 f32Data2;
 	s32 iData;
 };
 struct CellData
 {
-	CellGenData genData[20];
+	CellGenData genData[CellGenDataMax];
 	int ids[9];
 	v2f pos;
 };
-#pragma pack(pop)
 
 struct TerrainVertex
 {
@@ -67,7 +81,8 @@ struct TerrainVertex
 		m_normal(normal),
 		m_uv1(uv1),
 		m_uv2(uv2)
-	{}
+	{
+	}
 
 	v3f m_position;
 	v3f m_normal;
@@ -80,6 +95,8 @@ class MapCell
 public:
 	MapCell();
 	~MapCell();
+
+	bool m_needInit = true;
 	
 	struct Quad
 	{
@@ -110,8 +127,8 @@ public:
 		1 cell is 10x10 squares
 	*/
 
-	miGPUMesh* m_meshGPU0[100]; // hi detailed
-	miGPUMesh* m_meshGPU1[100]; // low
+	miGPUMesh* m_meshGPU0; // hi detailed
+	miGPUMesh* m_meshGPU1; // low
 	v3f m_position;
 
 	Aabb m_aabb;
@@ -125,12 +142,21 @@ public:
 	void Clear();
 
 	// pos: x, z
-	void InitNew(s32 id, f32 * pos);
+	void InitNew();
 
 	// -1 - not visible
 	// 0 - lod0
 	// 1 - lod1
-	s32 m_activeLOD[100];
+	s32 m_activeLOD;
+
+	// FOR DRAWING
+	miGPUDrawCommand m_drawCommand;
+	miMaterial m_material;
+	Mat4 m_worldMatrix;
+	Mat4 m_WVP;
+
+	CellData m_cellData;
+	void DoGenJob(CellData*, u32 genDataIndex, miVertexTriangle* currVertex, const v3f&);
 };
 
 

@@ -23,6 +23,8 @@ public:
 	mgContext_s* m_guiContext = 0;
 	mgFont* m_font1 = 0;
 	mgElement* m_textFPS = 0;
+	mgElement* m_textCELL_ID = 0;
+	mgElement* m_textPOSITION = 0;
 
 	Mat4 m_proj;
 	//miGSDrawCommand m_drawCommand;
@@ -30,6 +32,8 @@ public:
 	void Init();
 	void UpdateMatrix(s32 x, s32 y);
 	void SetTextFPS(s32 fps);
+	void SetTextCellID(s32 id);
+	void SetTextPosition(const v3f&);
 };
 
 

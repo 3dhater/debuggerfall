@@ -1,9 +1,12 @@
 ﻿#include "mi/MainSystem/MainSystem.h"
 #include "mi/Mesh/mesh.h"
 #include "mi/GraphicsSystem/util.h"
+#include "mi/Scene/common.h"
+#include "mi/Scene/cameraFly.h"
 
 #include "application.h"
 #include "MapCell.h"
+#include "ShaderTerrain.h"
 
 #include <filesystem>
 
@@ -11,12 +14,9 @@ extern Application* g_app;
 
 MapCell::MapCell() 
 {
-	for (u32 i = 0; i < 100; ++i)
-	{
-		m_meshGPU0[i] = 0;
-		m_meshGPU1[i] = 0;
-		m_activeLOD[i] = -1;
-	}
+	m_meshGPU0 = 0;
+	m_meshGPU1 = 0;
+	m_activeLOD = -1;
 }
 
 MapCell::~MapCell()
@@ -27,45 +27,153 @@ MapCell::~MapCell()
 void MapCell::Clear()
 {
 	m_id = -1;
-	for (u32 i = 0; i < 100; ++i)
+	if (m_meshGPU0)
 	{
-		if (m_meshGPU0[i])
-		{
-			miDestroy(m_meshGPU0[i]);
-			m_meshGPU0[i] = 0;
-		}
+		miDestroy(m_meshGPU0);
+		m_meshGPU0 = 0;
+	}
 		
-		if (m_meshGPU1[i])
-		{
-			miDestroy(m_meshGPU1[i]);
-			m_meshGPU1[i] = 0;
-		}
+	if (m_meshGPU1)
+	{
+		miDestroy(m_meshGPU1);
+		m_meshGPU1 = 0;
 	}
 }
 
-void MapCell::InitNew(s32 id, f32* pos)
+void MapCell::DoGenJob(CellData* cd, u32 genDataIndex, miVertexTriangle* vPtr, const v3f& offset)
 {
-	if (m_id != -1 || id == -1)
+	//if (cd->genData[genDataIndex].genType == CellGenType::CellGenType_count)
+	//	return;
+
+	f32 distance = v2f(
+		vPtr->Position.x + m_position.x,
+		vPtr->Position.z + m_position.z
+	).distance(
+		v2f((f32)cd->genData[genDataIndex].pos[0] + offset.x,
+			(f32)cd->genData[genDataIndex].pos[2] + offset.z));
+
+	f32 infl = 0.f;
+
+	if (distance == 0.f)
+		infl = 1.f;
+
+	switch (cd->genData[genDataIndex].genType)
+	{
+	case CellGenType::CellGenType_MoveDown:
+		if (cd->genData[genDataIndex].f32Data1)
+		{
+			if (distance > cd->genData[genDataIndex].f32Data1)
+				infl = 0.f;
+			else
+				infl = 1.f - (distance / cd->genData[genDataIndex].f32Data1);
+		}
+		vPtr->Position.y -= (f32)cd->genData[genDataIndex].pos[1] * infl;
+		break;
+	case CellGenType::CellGenType_MoveUp:
+		if (cd->genData[genDataIndex].f32Data1)
+		{
+			if (distance > cd->genData[genDataIndex].f32Data1)
+				infl = 0.f;
+			else
+				infl = 1.f - (distance / cd->genData[genDataIndex].f32Data1);
+		}
+		vPtr->Position.y += (f32)cd->genData[genDataIndex].pos[1] * infl;
+		break;
+	default:
 		return;
-	
-	Clear();
+	}
+}
 
-	m_position.x = pos[0];
+void MapCell::InitNew()
+{
+	m_position.x = m_cellData.pos.x;
 	m_position.y = 0.f;
-	m_position.z = pos[1];
+	m_position.z = m_cellData.pos.y;
 
-	m_id = id;
+	m_aabb.reset();
+	m_aabb.m_min.set(-0.125f, -10.f, -0.125f, 0.f);
+	m_aabb.m_max.set(0.125f, 10.f, 0.125f, 0.f);
+	
+	m_aabbTransformed = m_aabb;
+	m_aabbTransformed.m_min.x += m_cellData.pos.x;
+	m_aabbTransformed.m_min.z += m_cellData.pos.y;
+	m_aabbTransformed.m_max.x += m_cellData.pos.x;
+	m_aabbTransformed.m_max.z += m_cellData.pos.y;
+
+	m_worldMatrix.setTranslation(v3f(m_cellData.pos.x, 0.f, m_cellData.pos.y));
 
 	//g_app->m_file_gen
 
 	miGPUMeshInfo mi;
 	mi.m_meshPtr = g_app->m_cellbase;
-	
-	for (u32 i = 0; i < 100; ++i)
+
+	auto vPtr = (miVertexTriangle*)mi.m_meshPtr->m_vertices;
+	for (u32 i = 0; i < mi.m_meshPtr->m_vCount; ++i)
 	{
-		m_meshGPU0[i] = g_app->m_gs->CreateMesh(&mi);
+		vPtr->Position.y = 0.f;
+		for (u32 i2 = 0; i2 < CellGenDataMax; ++i2)
+		{
+			//DoGenJob(&m_cellData, i2, vPtr, m_position);
+			/*f32 distance = v2f(vPtr->Position.x, vPtr->Position.z).distance(
+				v2f((f32)m_cellData.genData[i2].pos[0], (f32)m_cellData.genData[i2].pos[2]));
+			
+			f32 infl = 0.f;
+
+			if (distance == 0.f)
+				infl = 1.f;
+
+			switch (m_cellData.genData[i2].genType)
+			{
+			case CellGenType::CellGenType_MoveDown:
+				if (m_cellData.genData[i2].f32Data1)
+				{
+					if (distance > m_cellData.genData[i2].f32Data1)
+						infl = 0.f;
+					else
+						infl = 1.f - (distance / m_cellData.genData[i2].f32Data1);
+				}
+				vPtr->Position.y -= (f32)m_cellData.genData[i2].pos[1] * infl;
+				break;
+			case CellGenType::CellGenType_MoveUp:
+			default:
+				if (m_cellData.genData[i2].f32Data1)
+				{
+					if (distance > m_cellData.genData[i2].f32Data1)
+						infl = 0.f;
+					else
+						infl = 1.f - (distance / m_cellData.genData[i2].f32Data1);
+				}
+				vPtr->Position.y += (f32)m_cellData.genData[i2].pos[1] * infl;
+				break;
+			}*/
+
+		}
+
+		for (u32 i2 = 0; i2 < CellGenDataMax; ++i2)
+		{
+			for (s32 i3 = 0; i3 < 9; ++i3)
+			{
+				auto cell = g_app->m_mapCells.m_data[i3];
+				if (cell->m_id != -1)
+				{
+					DoGenJob(&cell->m_cellData, i2, vPtr, cell->m_position);
+				}
+			}
+		}
+		
+		vPtr++;
 	}
-	printf("as");
+	
+	m_meshGPU0 = g_app->m_gs->CreateMesh(&mi);
+	m_material.m_wireframe = true;
+	m_material.m_maps[0].m_GPUTexture = g_app->m_mainSystem->GetWhiteTexture();
+	m_drawCommand.m_shader = g_app->m_shaderTerrain->m_GPUShader;
+	m_drawCommand.m_material = &m_material;
+	m_drawCommand.m_mesh = m_meshGPU0;
+	m_drawCommand.m_matWorld = &m_worldMatrix;
+	m_drawCommand.m_matView = &g_app->m_activeCamera->m_view;
+	m_drawCommand.m_matProjection = &g_app->m_activeCamera->m_projection;
+	m_drawCommand.m_matWVP = &m_WVP;
 }
 
 f32 MapCell_getY(

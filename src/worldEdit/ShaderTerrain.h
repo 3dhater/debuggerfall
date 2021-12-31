@@ -18,7 +18,7 @@ public:
 
 	void* m_cbVertex = 0;
 
-	virtual void OnSetConstants(miGraphicsSystem* gs, miGSDrawCommand* cmd) override;
+	virtual void OnSetConstants(miGraphicsSystem* gs, miGPUDrawCommand* cmd) override;
 };
 
 

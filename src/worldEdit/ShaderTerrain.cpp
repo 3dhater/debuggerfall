@@ -18,7 +18,7 @@ ShaderTerrain::~ShaderTerrain()
 		m_GPUShader->Release();
 }
 
-void ShaderTerrain::OnSetConstants(miGraphicsSystem* gs, miGSDrawCommand* cmd)
+void ShaderTerrain::OnSetConstants(miGraphicsSystem* gs, miGPUDrawCommand* cmd)
 {
 	if(cmd->m_material->m_maps[0].m_GPUTexture)
 		cmd->m_shader->SetTexture(cmd->m_material->m_maps[0].m_GPUTexture, 0);
