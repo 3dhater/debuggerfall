@@ -68,6 +68,12 @@ struct CellData
 	v2f pos;
 };
 
+struct CellGenData2
+{
+	CellGenData data;
+	v3f worldPosition;
+};
+
 struct TerrainVertex
 {
 	TerrainVertex() {}
@@ -156,7 +162,7 @@ public:
 	Mat4 m_WVP;
 
 	CellData m_cellData;
-	void DoGenJob(CellData*, u32 genDataIndex, miVertexTriangle* currVertex, const v3f&);
+	//void DoGenJob(CellData*, u32 genDataIndex, miVertexTriangle* currVertex, const v3f&);
 };
 
 

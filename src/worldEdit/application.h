@@ -11,7 +11,8 @@ void MapToVec(const  M& m, V& v) {
 	}
 }
 
-class MapCell;
+#include "MapCell.h"
+
 class Player;
 class ApplicationGUI;
 class miMesh;
@@ -53,6 +54,8 @@ public:
 	bool m_needUpdateMapCell = true;// need to find cell ID for player, and init cell
 	bool m_needUpdateMapView = true;
 	void _updateMapCell();
+
+	miArray<CellGenData2> m_genData;
 
 	//MapCell* m_testMapCell = 0;
 	miArray<MapCell*> m_mapCells;

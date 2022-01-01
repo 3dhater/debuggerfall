@@ -40,50 +40,6 @@ void MapCell::Clear()
 	}
 }
 
-void MapCell::DoGenJob(CellData* cd, u32 genDataIndex, miVertexTriangle* vPtr, const v3f& offset)
-{
-	//if (cd->genData[genDataIndex].genType == CellGenType::CellGenType_count)
-	//	return;
-
-	f32 distance = v2f(
-		vPtr->Position.x + m_position.x,
-		vPtr->Position.z + m_position.z
-	).distance(
-		v2f((f32)cd->genData[genDataIndex].pos[0] + offset.x,
-			(f32)cd->genData[genDataIndex].pos[2] + offset.z));
-
-	f32 infl = 0.f;
-
-	if (distance == 0.f)
-		infl = 1.f;
-
-	switch (cd->genData[genDataIndex].genType)
-	{
-	case CellGenType::CellGenType_MoveDown:
-		if (cd->genData[genDataIndex].f32Data1)
-		{
-			if (distance > cd->genData[genDataIndex].f32Data1)
-				infl = 0.f;
-			else
-				infl = 1.f - (distance / cd->genData[genDataIndex].f32Data1);
-		}
-		vPtr->Position.y -= (f32)cd->genData[genDataIndex].pos[1] * infl;
-		break;
-	case CellGenType::CellGenType_MoveUp:
-		if (cd->genData[genDataIndex].f32Data1)
-		{
-			if (distance > cd->genData[genDataIndex].f32Data1)
-				infl = 0.f;
-			else
-				infl = 1.f - (distance / cd->genData[genDataIndex].f32Data1);
-		}
-		vPtr->Position.y += (f32)cd->genData[genDataIndex].pos[1] * infl;
-		break;
-	default:
-		return;
-	}
-}
-
 void MapCell::InitNew()
 {
 	m_position.x = m_cellData.pos.x;
@@ -111,53 +67,60 @@ void MapCell::InitNew()
 	for (u32 i = 0; i < mi.m_meshPtr->m_vCount; ++i)
 	{
 		vPtr->Position.y = 0.f;
-		for (u32 i2 = 0; i2 < CellGenDataMax; ++i2)
+
+	//	printf("g_app->m_genData.m_size: %i\n", g_app->m_genData.m_size);
+		for (s32 i3 = 0; i3 < g_app->m_genData.m_size; ++i3)
 		{
-			//DoGenJob(&m_cellData, i2, vPtr, m_position);
-			/*f32 distance = v2f(vPtr->Position.x, vPtr->Position.z).distance(
-				v2f((f32)m_cellData.genData[i2].pos[0], (f32)m_cellData.genData[i2].pos[2]));
-			
-			f32 infl = 0.f;
+			auto gd = &g_app->m_genData.m_data[i3];
+			f64 distance = 0.f;
+			{
+				f64 _x1 = (f64)vPtr->Position.x + (f64)m_position.x;
+				f64 _z1 = (f64)vPtr->Position.z + (f64)m_position.z;
+
+				f64 _x2 = (f64)gd->worldPosition.x;
+				f64 _z2 = (f64)gd->worldPosition.z;
+
+				f64 _xx = _x2 - _x1;
+				f64 _zz = _z2 - _z1;
+
+				distance = std::sqrt((_xx * _xx) + (_zz * _zz));
+			}
+
+			/*f32 distance = v2f(
+				vPtr->Position.x + m_position.x,
+				vPtr->Position.z + m_position.z
+			).distance(
+				v2f((f32)cd->genData[genDataIndex].pos[0] + offset.x,
+					(f32)cd->genData[genDataIndex].pos[2] + offset.z));*/
+
+			f64 infl = 0.f;
 
 			if (distance == 0.f)
 				infl = 1.f;
 
-			switch (m_cellData.genData[i2].genType)
+			switch (gd->data.genType)
 			{
 			case CellGenType::CellGenType_MoveDown:
-				if (m_cellData.genData[i2].f32Data1)
+				if (gd->data.f32Data1)
 				{
-					if (distance > m_cellData.genData[i2].f32Data1)
+					if (distance > gd->data.f32Data1)
 						infl = 0.f;
 					else
-						infl = 1.f - (distance / m_cellData.genData[i2].f32Data1);
+						infl = 1.0 - (distance / (f64)gd->data.f32Data1);
 				}
-				vPtr->Position.y -= (f32)m_cellData.genData[i2].pos[1] * infl;
+				vPtr->Position.y -= (f32)gd->data.pos[1] * infl;
 				break;
-			case CellGenType::CellGenType_MoveUp:
 			default:
-				if (m_cellData.genData[i2].f32Data1)
+			case CellGenType::CellGenType_MoveUp:
+				if (gd->data.f32Data1)
 				{
-					if (distance > m_cellData.genData[i2].f32Data1)
+					if (distance > gd->data.f32Data1)
 						infl = 0.f;
 					else
-						infl = 1.f - (distance / m_cellData.genData[i2].f32Data1);
+						infl = 1.0 - (distance / (f64)gd->data.f32Data1);
 				}
-				vPtr->Position.y += (f32)m_cellData.genData[i2].pos[1] * infl;
+				vPtr->Position.y += (f32)gd->data.pos[1] * infl;
 				break;
-			}*/
-
-		}
-
-		for (u32 i2 = 0; i2 < CellGenDataMax; ++i2)
-		{
-			for (s32 i3 = 0; i3 < 9; ++i3)
-			{
-				auto cell = g_app->m_mapCells.m_data[i3];
-				if (cell->m_id != -1)
-				{
-					DoGenJob(&cell->m_cellData, i2, vPtr, cell->m_position);
-				}
 			}
 		}
 		

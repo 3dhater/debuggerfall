@@ -840,6 +840,22 @@ void Application::_updateMapCell()
 						fread(&m_mapCells.m_data[i2]->m_cellData, sizeof(CellData), 1, m_file_land);
 						
 						m_mapCells.m_data[i2]->m_id = m_player->m_cellData.ids[i];
+						m_mapCells.m_data[i2]->m_position.x = m_mapCells.m_data[i2]->m_cellData.pos.x;
+						m_mapCells.m_data[i2]->m_position.y = 0.f;
+						m_mapCells.m_data[i2]->m_position.z = m_mapCells.m_data[i2]->m_cellData.pos.y;
+
+						/*for (u32 i3 = 0; i3 < CellGenDataMax; ++i3)
+						{
+							if (m_mapCells.m_data[i2]->m_cellData.genData[i3].genType != CellGenType_count)
+							{
+								CellGenData2 gd;
+								gd.data = m_mapCells.m_data[i2]->m_cellData.genData[i3];
+								gd.worldPosition = m_mapCells.m_data[i2]->m_position;
+								gd.worldPosition.x += (f32)gd.data.pos[0];
+								gd.worldPosition.z += (f32)gd.data.pos[2];
+								m_genData.push_back(gd);
+							}
+						}*/
 
 						cellsInit.push_back(m_mapCells.m_data[i2]);
 						//m_mapCells.m_data[i2]->InitNew(m_player->m_cellData.ids[i]/*, &m_mapCells.m_data[i2]->m_cellData.pos.x*/);
@@ -849,13 +865,44 @@ void Application::_updateMapCell()
 				}
 			}
 		}
-
-		// собрать gendata и потом инициализировать 
-
+		
 
 		for (s32 i = 0; i < cellsInit.m_size; ++i)
 		{
-			cellsInit.m_data[i]->InitNew();
+			auto cell = cellsInit.m_data[i];
+
+			// собрать gendata и потом инициализировать 
+			m_genData.clear();
+			
+			// пройтись по всем соседним ячейкам собрав gendata
+			for (s32 i2 = 0; i2 < 9; ++i2)
+			{
+				auto currID = cell->m_cellData.ids[i2];
+				if (currID == -1)
+					continue;
+				
+				CellData cd;
+				_fseeki64(m_file_land, currID * sizeof(CellData), SEEK_SET);
+				fread(&cd, sizeof(CellData), 1, m_file_land);
+
+				for (u32 i3 = 0; i3 < CellGenDataMax; ++i3)
+				{
+					//if (cd.genData[i3].genType != CellGenType_count)
+					{
+						CellGenData2 gd;
+						gd.data = cd.genData[i3];
+						gd.worldPosition.x = cd.pos.x;
+						gd.worldPosition.y = 0.f;
+						gd.worldPosition.z = cd.pos.y;
+						gd.worldPosition.x += (f32)gd.data.pos[0];
+						gd.worldPosition.z += (f32)gd.data.pos[2];
+						m_genData.push_back(gd);
+					}
+				}
+			}
+
+
+			cell->InitNew();
 		//	printf("a");
 		}
 		//printf(" : %i\n", cellsInit.m_size);
