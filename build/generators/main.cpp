@@ -120,8 +120,9 @@ void gen_basic_cells()
 		std::default_random_engine generator;
 		std::uniform_int_distribution<int> int_distribution(0, 1);
 		std::uniform_real_distribution<f64> position_distribution(-0.125, 0.125);
-		std::uniform_real_distribution<f64> moveUpDown_distribution(0., 0.005);
-		std::uniform_real_distribution<f64> moveUpDownRadius_distribution(0., 0.05);
+		std::uniform_real_distribution<f64> moveUp_distribution(0., 0.05);
+		std::uniform_real_distribution<f64> moveDown_distribution(0., 0.01);
+		std::uniform_real_distribution<f64> moveUpDownRadius_distribution(0.01, 0.15);
 
 		int int_dice_roll = int_distribution(generator);
 		f32 position_dice_roll = position_distribution(generator);
@@ -192,8 +193,11 @@ void gen_basic_cells()
 					switch (cd.genData[gi].genType)
 					{
 					case CellGenType_MoveDown:
+						cd.genData[gi].pos[1] = (float)moveDown_distribution(generator);
+						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
+						break;
 					case CellGenType_MoveUp:
-						cd.genData[gi].pos[1] = (float)moveUpDown_distribution(generator);
+						cd.genData[gi].pos[1] = (float)moveUp_distribution(generator);
 						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
 						break;
 					case CellGenType_count:
@@ -201,7 +205,7 @@ void gen_basic_cells()
 						break;
 					}
 
-					if(gi > 5)
+					if(gi > 11)
 						cd.genData[gi].genType = CellGenType_count;
 				}
 				

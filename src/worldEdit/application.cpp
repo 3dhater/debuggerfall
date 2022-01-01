@@ -844,19 +844,6 @@ void Application::_updateMapCell()
 						m_mapCells.m_data[i2]->m_position.y = 0.f;
 						m_mapCells.m_data[i2]->m_position.z = m_mapCells.m_data[i2]->m_cellData.pos.y;
 
-						/*for (u32 i3 = 0; i3 < CellGenDataMax; ++i3)
-						{
-							if (m_mapCells.m_data[i2]->m_cellData.genData[i3].genType != CellGenType_count)
-							{
-								CellGenData2 gd;
-								gd.data = m_mapCells.m_data[i2]->m_cellData.genData[i3];
-								gd.worldPosition = m_mapCells.m_data[i2]->m_position;
-								gd.worldPosition.x += (f32)gd.data.pos[0];
-								gd.worldPosition.z += (f32)gd.data.pos[2];
-								m_genData.push_back(gd);
-							}
-						}*/
-
 						cellsInit.push_back(m_mapCells.m_data[i2]);
 						//m_mapCells.m_data[i2]->InitNew(m_player->m_cellData.ids[i]/*, &m_mapCells.m_data[i2]->m_cellData.pos.x*/);
 						//m_mapCells.m_data[i2]->InitNew();

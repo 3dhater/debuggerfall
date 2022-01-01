@@ -106,7 +106,15 @@ void MapCell::InitNew()
 					if (distance > gd->data.f32Data1)
 						infl = 0.f;
 					else
+					{
 						infl = 1.0 - (distance / (f64)gd->data.f32Data1);
+
+						// пусть если infl == 1 то это 90градусов 
+						f32 alfa = infl * 1.5707963268;
+						f32 sn = std::sin(alfa);
+
+						infl = sn;
+					}
 				}
 				vPtr->Position.y -= (f32)gd->data.pos[1] * infl;
 				break;
@@ -117,7 +125,12 @@ void MapCell::InitNew()
 					if (distance > gd->data.f32Data1)
 						infl = 0.f;
 					else
+					{
 						infl = 1.0 - (distance / (f64)gd->data.f32Data1);
+						f32 alfa = infl * 1.5707963268;
+						f32 sn = std::sin(alfa);
+						infl = sn;
+					}
 				}
 				vPtr->Position.y += (f32)gd->data.pos[1] * infl;
 				break;
