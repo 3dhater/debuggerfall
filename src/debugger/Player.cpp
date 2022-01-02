@@ -7,6 +7,8 @@
 #include "application.h"
 #include "Player.h"
 
+#include "pbt.h"
+
 extern Application* g_app;
 
 Player::Player() 
@@ -69,4 +71,10 @@ void Player::MoveForward(f32 dt)
 	m_cameraFly->MoveForward(dt);
 	m_position = m_cameraFly->m_localPosition;
 	g_app->m_needUpdateMapCell = true;
+}
+
+void Player::SetPosition(f32 x, f32 y, f32 z)
+{
+	m_position.set(x, y, z);
+	m_cameraFly->m_localPosition.set(x, y, z, 0.f);
 }

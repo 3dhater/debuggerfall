@@ -22,6 +22,8 @@ public:
 	void MoveDown(f32 dt);
 	void MoveBackward(f32 dt);
 	void MoveForward(f32 dt);
+
+	void SetPosition(f32 x, f32 y, f32 z);
 };
 
 

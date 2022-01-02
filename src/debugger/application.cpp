@@ -303,6 +303,10 @@ vidOk:
 		//m_cellbaseDrawCmd.m_shader = m_shaderTerrain->m_GPUShader;
 	}
 
+#ifndef WORLDEDITOR
+	m_player->SetPosition(0.082818, 0.079153, 0.06849);
+#endif
+
 	if (!OpenMap())
 		return false;
 
@@ -374,6 +378,8 @@ void Application::MainLoop()
 			m_activeCamera->m_rotationMatrix.setBasis(lookAt);
 		}*/
 		m_activeCamera->OnUpdate();
+
+#ifdef WORLDEDITOR
 		if (isSpace)
 		{
 			m_cameraWasMoved = true;
@@ -414,6 +420,9 @@ void Application::MainLoop()
 			// this example not about it, so implement it by yourself
 			m_mainSystem->SetCursorPosition(cursorX, cursorY, m_windowMain);
 		}
+#else
+
+#endif
 
 	//	FindCurrentCellID();
 

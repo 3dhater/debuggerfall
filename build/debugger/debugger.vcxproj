@@ -19,13 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\purebullet\src\pbt_world.c" />
     <ClCompile Include="..\..\src\debugger\application.cpp" />
+    <ClCompile Include="..\..\src\debugger\debugger.cpp" />
     <ClCompile Include="..\..\src\debugger\GUI.cpp" />
     <ClCompile Include="..\..\src\debugger\MapCell.cpp" />
     <ClCompile Include="..\..\src\debugger\Player.cpp" />
     <ClCompile Include="..\..\src\debugger\ShaderTerrain.cpp" />
     <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c" />
-    <ClCompile Include="..\..\src\worldEdit\worldEdit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\debugger\application.h" />
@@ -37,8 +38,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{eb21e0e3-7490-412c-b6e7-f9105d6ce2e7}</ProjectGuid>
-    <RootNamespace>worldEdit</RootNamespace>
+    <ProjectGuid>{eb21e0e2-7490-412c-b6e7-f9105d6ce2e7}</ProjectGuid>
+    <RootNamespace>debugger</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -106,9 +107,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;WORLDEDITOR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -124,9 +125,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;WORLDEDITOR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -145,9 +146,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;WORLDEDITOR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -163,9 +164,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;WORLDEDITOR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>

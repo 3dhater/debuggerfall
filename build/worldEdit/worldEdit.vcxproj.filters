@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c" />
+    <ClCompile Include="..\..\src\worldEdit\worldEdit.cpp" />
+    <ClCompile Include="..\..\src\debugger\MapCell.cpp">
+      <Filter>debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\debugger\Player.cpp">
+      <Filter>debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\debugger\ShaderTerrain.cpp">
+      <Filter>debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\debugger\GUI.cpp">
+      <Filter>debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\debugger\application.cpp">
+      <Filter>debugger</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\debugger\MapCell.h">
+      <Filter>debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\debugger\Player.h">
+      <Filter>debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\debugger\ShaderTerrain.h">
+      <Filter>debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\debugger\GUI.h">
+      <Filter>debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\debugger\application.h">
+      <Filter>debugger</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="debugger">
+      <UniqueIdentifier>{b4d3e4b4-5b71-4fed-8ad3-e18eb38f92aa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

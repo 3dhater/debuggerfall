@@ -21,23 +21,23 @@ MapCell::MapCell()
 
 MapCell::~MapCell()
 {
-	Clear();
-}
-
-void MapCell::Clear()
-{
-	m_id = -1;
 	if (m_meshGPU0)
 	{
 		miDestroy(m_meshGPU0);
 		m_meshGPU0 = 0;
 	}
-		
+
 	if (m_meshGPU1)
 	{
 		miDestroy(m_meshGPU1);
 		m_meshGPU1 = 0;
 	}
+}
+
+void MapCell::Clear()
+{
+	m_id = -1;
+	
 }
 
 void MapCell::InitNew()
@@ -61,6 +61,7 @@ void MapCell::InitNew()
 	//g_app->m_file_gen
 
 	miGPUMeshInfo mi;
+	mi.m_isReadWrite = true;
 	mi.m_meshPtr = g_app->m_cellbase;
 
 	auto vPtr = (miVertexTriangle*)mi.m_meshPtr->m_vertices;
@@ -140,7 +141,18 @@ void MapCell::InitNew()
 		vPtr++;
 	}
 	
-	m_meshGPU0 = g_app->m_gs->CreateMesh(&mi);
+	if (!m_meshGPU0)
+	{
+		m_meshGPU0 = g_app->m_gs->CreateMesh(&mi);
+	}
+	else
+	{
+		u8* GPUVPtr = 0;
+		m_meshGPU0->MapModelForWriteVerts(&GPUVPtr);
+		if (GPUVPtr)
+			memcpy(GPUVPtr, mi.m_meshPtr->m_vertices, mi.m_meshPtr->m_vCount * mi.m_meshPtr->m_stride);
+		m_meshGPU0->UnmapModelForWriteVerts();
+	}
 	m_material.m_wireframe = true;
 	m_material.m_maps[0].m_GPUTexture = g_app->m_mainSystem->GetWhiteTexture();
 	m_drawCommand.m_shader = g_app->m_shaderTerrain->m_GPUShader;

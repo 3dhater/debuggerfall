@@ -39,3 +39,5 @@ data/
 build/generators/Debug
 build/generators/Release
 editor_data/
+build/debugger/Debug
+build/debugger/Release
