@@ -44,7 +44,6 @@
 
 #include "btBulletDynamicsCommon.h"
 
-
 #include <filesystem>
 #include <random>
 
@@ -74,7 +73,7 @@ public:
 	{
 		g_app->m_gs->DrawLine3D(v4f(from.m_floats[0], from.m_floats[1], from.m_floats[2], 0.f), 
 			v4f(to.m_floats[0], to.m_floats[1], to.m_floats[2], 0.f), 
-			miColor(color.m_floats[0], color.m_floats[1], color.m_floats[2]), 
+			miColor((f32)color.m_floats[0], (f32)color.m_floats[1], (f32)color.m_floats[2]),
 			&g_app->m_activeCamera->m_viewProjection);
 	}
 
@@ -289,19 +288,23 @@ vidOk:
 	//m_gpu->UseVSync(false);
 
 	m_physics->m_collisionConfiguration = new btDefaultCollisionConfiguration();
+	
+
 	m_physics->m_dispatcher = new btCollisionDispatcher(m_physics->m_collisionConfiguration);
+
 	m_physics->m_overlappingPairCache = new btDbvtBroadphase();
+
 	m_physics->m_solver = new btSequentialImpulseConstraintSolver;
+
 	m_physics->m_world = new btDiscreteDynamicsWorld(
 		m_physics->m_dispatcher,
 		m_physics->m_overlappingPairCache,
 		m_physics->m_solver,
 		m_physics->m_collisionConfiguration);
 	m_physics->m_world->setDebugDrawer(g_debugDrawer);
-	m_physics->m_world->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+	m_physics->m_world->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawAabb);
 	
-
-	m_physics->m_world->setGravity(btVector3(0.f, -0.8f, 0.f));
+	m_physics->m_world->setGravity(btVector3(0.f, -0.025f, 0.f));
 
 	/*{
 		std::string src = "hello hello hello hello hello hello hello hello";
@@ -353,7 +356,7 @@ vidOk:
 	}
 
 #ifndef WORLDEDITOR
-	m_player->SetPosition(0.082818, 0.079153, 0.06849);
+	m_player->SetPosition(-490.082818, 0.079153, -490.06849);
 #endif
 
 	if (!OpenMap())
@@ -470,7 +473,24 @@ void Application::MainLoop()
 			m_mainSystem->SetCursorPosition(cursorX, cursorY, m_windowMain);
 		}
 #else
+		m_player->m_cameraFly->Rotate(v2f((f32)m_inputContext->mouseMoveDelta.x, (f32)m_inputContext->mouseMoveDelta.y), m_dt);
 
+		if (mgIsKeyHold(m_inputContext, MG_KEY_W) && mgIsKeyHold(m_inputContext, MG_KEY_A))
+			m_player->MoveNWRB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_W) && mgIsKeyHold(m_inputContext, MG_KEY_D))
+			m_player->MoveNERB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_S) && mgIsKeyHold(m_inputContext, MG_KEY_A))
+			m_player->MoveSWRB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_S) && mgIsKeyHold(m_inputContext, MG_KEY_D))
+			m_player->MoveSERB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_W))
+			m_player->MoveNRB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_S))
+			m_player->MoveSRB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_A))
+			m_player->MoveWRB(m_dt);
+		else if (mgIsKeyHold(m_inputContext, MG_KEY_D))
+			m_player->MoveERB(m_dt);
 #endif
 
 	//	FindCurrentCellID();
@@ -506,6 +526,10 @@ void Application::MainLoop()
 			}
 		}
 
+#ifndef WORLDEDITOR
+		m_physics->m_world->stepSimulation(1.f / 60.f, 0);
+#endif
+		m_player->Update(m_dt);
 		
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
@@ -528,11 +552,11 @@ void Application::MainLoop()
 		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
 		
-		//m_physics->m_world->debugDrawWorld();
+		m_physics->m_world->debugDrawWorld();
 
 		if (m_mapDrawCommands.m_size)
 		{
-		m_gs->Draw(&m_mapDrawCommands, m_mapDrawCommands.m_size);
+			m_gs->Draw(&m_mapDrawCommands, m_mapDrawCommands.m_size);
 		}
 
 ///		m_gs->DrawRectangle(v4f(0.f, 0.f, 100.f, 100.f), ColorRed, ColorBlue, );
@@ -934,7 +958,7 @@ void Application::_updateMapCell()
 
 				for (u32 i3 = 0; i3 < CellGenDataMax; ++i3)
 				{
-					//if (cd.genData[i3].genType != CellGenType_count)
+					if (cd.genData[i3].genType != CellGenType_count)
 					{
 						CellGenData2 gd;
 						gd.data = cd.genData[i3];

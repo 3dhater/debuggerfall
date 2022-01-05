@@ -222,6 +222,7 @@ void MapCell::InitNew()
 		vPtr++;
 	}
 
+	//if(!m_collisionShape->getOwnsBvh())
 	m_collisionShape->buildOptimizedBvh();
 
 	if (m_rigidBody)
@@ -242,6 +243,7 @@ void MapCell::InitNew()
 		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, m_collisionShape, localInertia);
 		m_rigidBody = new btRigidBody(rbInfo);
+		m_rigidBody->setFriction(1.f);
 		g_app->m_physics->m_world->addRigidBody(m_rigidBody);
 	}
 

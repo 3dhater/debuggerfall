@@ -205,7 +205,7 @@ void gen_basic_cells()
 						break;
 					}
 
-					if(gi > 11)
+					if(gi > 5)
 						cd.genData[gi].genType = CellGenType_count;
 				}
 				
