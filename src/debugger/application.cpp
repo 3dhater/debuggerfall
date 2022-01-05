@@ -42,6 +42,9 @@
 #include "ShaderTerrain.h"
 #include "GUI.h"
 
+#include "btBulletDynamicsCommon.h"
+
+
 #include <filesystem>
 #include <random>
 
@@ -59,6 +62,31 @@ f32 g_terrainLODDistance_3 = 0.04f;
 //f32 g_terrainLODDistance_4 = 0.025f;
 
 Application* g_app = nullptr;
+
+class MyDebugDrawer : public btIDebugDraw
+{
+public:
+	MyDebugDrawer() {
+	}
+	virtual ~MyDebugDrawer() {}
+
+	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override
+	{
+		g_app->m_gs->DrawLine3D(v4f(from.m_floats[0], from.m_floats[1], from.m_floats[2], 0.f), 
+			v4f(to.m_floats[0], to.m_floats[1], to.m_floats[2], 0.f), 
+			miColor(color.m_floats[0], color.m_floats[1], color.m_floats[2]), 
+			&g_app->m_activeCamera->m_viewProjection);
+	}
+
+	int m_mode = 0;
+
+	virtual void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) {}
+	virtual void reportErrorWarning(const char* warningString) {}
+	virtual void draw3dText(const btVector3& location, const char* textString) {}
+	virtual void setDebugMode(int debugMode) { m_mode = debugMode; }
+	virtual int getDebugMode() const { return m_mode; }
+};
+MyDebugDrawer* g_debugDrawer = 0;
 
 v2f g_testCellPosition;
 
@@ -101,6 +129,8 @@ void window_callbackOnCommand(s32 commandID) {
 
 Application::Application()
 {
+	m_physics = new PhysicsEngine;
+	g_debugDrawer = new MyDebugDrawer;
 	/*std::default_random_engine generator;
 	std::uniform_int_distribution<int> int_distribution(0, 1);
 	std::uniform_real_distribution<f64> float_distribution(-0.125, 0.125);
@@ -113,6 +143,9 @@ Application::Application()
 
 Application::~Application()
 {
+	if (g_debugDrawer)
+		delete g_debugDrawer;
+
 	if (m_shaderTerrain) delete m_shaderTerrain;
 	//if (m_cellbaseGPU) m_cellbaseGPU->Release();
 	if (m_cellbase) delete m_cellbase;
@@ -125,6 +158,9 @@ Application::~Application()
 
 	if (m_GUI)
 		delete m_GUI;
+
+	if (m_physics)
+		delete m_physics;
 
 	if (m_windowMain)
 		m_windowMain->Release();
@@ -252,7 +288,20 @@ vidOk:
 	m_gs->GetDepthRange(&m_gpuDepthRange);
 	//m_gpu->UseVSync(false);
 
+	m_physics->m_collisionConfiguration = new btDefaultCollisionConfiguration();
+	m_physics->m_dispatcher = new btCollisionDispatcher(m_physics->m_collisionConfiguration);
+	m_physics->m_overlappingPairCache = new btDbvtBroadphase();
+	m_physics->m_solver = new btSequentialImpulseConstraintSolver;
+	m_physics->m_world = new btDiscreteDynamicsWorld(
+		m_physics->m_dispatcher,
+		m_physics->m_overlappingPairCache,
+		m_physics->m_solver,
+		m_physics->m_collisionConfiguration);
+	m_physics->m_world->setDebugDrawer(g_debugDrawer);
+	m_physics->m_world->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
 	
+
+	m_physics->m_world->setGravity(btVector3(0.f, -0.8f, 0.f));
 
 	/*{
 		std::string src = "hello hello hello hello hello hello hello hello";
@@ -479,9 +528,11 @@ void Application::MainLoop()
 		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
 		
+		//m_physics->m_world->debugDrawWorld();
+
 		if (m_mapDrawCommands.m_size)
 		{
-			m_gs->Draw(&m_mapDrawCommands, m_mapDrawCommands.m_size);
+		m_gs->Draw(&m_mapDrawCommands, m_mapDrawCommands.m_size);
 		}
 
 ///		m_gs->DrawRectangle(v4f(0.f, 0.f, 100.f, 100.f), ColorRed, ColorBlue, );
@@ -905,4 +956,27 @@ void Application::_updateMapCell()
 
 		prev_ID = m_player->m_cellID;
 	}
+}
+
+PhysicsEngine::PhysicsEngine()
+{
+
+}
+
+PhysicsEngine::~PhysicsEngine()
+{
+	if(m_world)
+		delete m_world;
+
+	if(m_solver)
+		delete m_solver;
+
+	if(m_overlappingPairCache)
+		delete m_overlappingPairCache;
+
+	if(m_dispatcher)
+		delete m_dispatcher;
+
+	if(m_collisionConfiguration)
+		delete m_collisionConfiguration;
 }

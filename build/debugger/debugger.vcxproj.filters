@@ -2,7 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c" />
-    <ClCompile Include="..\..\..\purebullet\src\pbt_world.c">
+    <ClCompile Include="..\..\src\debugger\application.cpp" />
+    <ClCompile Include="..\..\src\debugger\debugger.cpp" />
+    <ClCompile Include="..\..\src\debugger\GUI.cpp" />
+    <ClCompile Include="..\..\src\debugger\MapCell.cpp" />
+    <ClCompile Include="..\..\src\debugger\Player.cpp" />
+    <ClCompile Include="..\..\src\debugger\ShaderTerrain.cpp" />
+    <ClCompile Include="..\..\src\debugger\Physics.cpp">
       <Filter>physics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -10,5 +16,15 @@
     <Filter Include="physics">
       <UniqueIdentifier>{7700c850-a9dd-4bcf-b3f3-b4ae1f764d6e}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\debugger\application.h" />
+    <ClInclude Include="..\..\src\debugger\GUI.h" />
+    <ClInclude Include="..\..\src\debugger\MapCell.h" />
+    <ClInclude Include="..\..\src\debugger\Player.h" />
+    <ClInclude Include="..\..\src\debugger\ShaderTerrain.h" />
+    <ClInclude Include="..\..\src\debugger\Physics.h">
+      <Filter>physics</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

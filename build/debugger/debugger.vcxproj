@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\purebullet\src\pbt_world.c" />
     <ClCompile Include="..\..\src\debugger\application.cpp" />
     <ClCompile Include="..\..\src\debugger\debugger.cpp" />
     <ClCompile Include="..\..\src\debugger\GUI.cpp" />
     <ClCompile Include="..\..\src\debugger\MapCell.cpp" />
+    <ClCompile Include="..\..\src\debugger\Physics.cpp" />
     <ClCompile Include="..\..\src\debugger\Player.cpp" />
     <ClCompile Include="..\..\src\debugger\ShaderTerrain.cpp" />
     <ClCompile Include="..\..\src\libs\migui\src\miGUILoader.c" />
@@ -32,6 +32,7 @@
     <ClInclude Include="..\..\src\debugger\application.h" />
     <ClInclude Include="..\..\src\debugger\GUI.h" />
     <ClInclude Include="..\..\src\debugger\MapCell.h" />
+    <ClInclude Include="..\..\src\debugger\Physics.h" />
     <ClInclude Include="..\..\src\debugger\Player.h" />
     <ClInclude Include="..\..\src\debugger\ShaderTerrain.h" />
   </ItemGroup>
@@ -109,7 +110,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;E:\Code\debuggerfall\src\libs\bullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -127,7 +128,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;E:\Code\debuggerfall\src\libs\bullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -148,7 +149,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;E:\Code\debuggerfall\src\libs\bullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -166,7 +167,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Code\milashka\include;E:\Code\miGUI\src;E:\Code\debuggerfall\inc;E:\Code\debuggerfall\src\debugger;E:\Code\purebullet\src;E:\Code\debuggerfall\src\libs\bullet\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>

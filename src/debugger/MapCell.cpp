@@ -10,6 +10,8 @@
 
 #include <filesystem>
 
+#include "btBulletDynamicsCommon.h"
+
 extern Application* g_app;
 
 MapCell::MapCell() 
@@ -21,6 +23,17 @@ MapCell::MapCell()
 
 MapCell::~MapCell()
 {
+	/*if (m_collisionMesh)
+		delete m_collisionMesh;*/
+	if (m_collisionMeshInterface)
+		delete m_collisionMeshInterface;
+
+	if (m_collisionShape)
+		delete m_collisionShape;
+
+	if (m_meshForCollision)
+		delete m_meshForCollision;
+
 	if (m_meshGPU0)
 	{
 		miDestroy(m_meshGPU0);
@@ -60,10 +73,77 @@ void MapCell::InitNew()
 
 	//g_app->m_file_gen
 
+	//if (m_collisionShape)
+		//delete m_collisionShape;
+	//if (m_collisionMesh)
+		//delete m_collisionMesh;
+	
+
 	miGPUMeshInfo mi;
 	mi.m_isReadWrite = true;
 	mi.m_meshPtr = g_app->m_cellbase;
+	
+	//if (!m_collisionMesh)
+	if(!m_collisionMeshInterface)
+	{
+		//m_collisionMesh = new btTriangleMesh(true, true);
+		//m_collisionMesh->preallocateVertices(mi.m_meshPtr->m_vCount);
+		//m_collisionMesh->preallocateIndices(mi.m_meshPtr->m_iCount);
 
+
+		/*auto vPtr = (miVertexTriangle*)mi.m_meshPtr->m_vertices;
+		auto iPtr = (u32*)mi.m_meshPtr->m_indices;
+		for (u32 i = 0; i < mi.m_meshPtr->m_iCount/3; ++i)
+		{
+			m_collisionMesh->addTriangle(
+				btVector3(vPtr[iPtr[i]].Position.x, vPtr[iPtr[i]].Position.y, vPtr[iPtr[i]].Position.z),
+				btVector3(vPtr[iPtr[i+1]].Position.x, vPtr[iPtr[i+1]].Position.y, vPtr[iPtr[i+1]].Position.z),
+				btVector3(vPtr[iPtr[i+2]].Position.x, vPtr[iPtr[i+2]].Position.y, vPtr[iPtr[i+2]].Position.z),
+				false
+			);
+
+			i += 3;
+			;
+		}*/
+
+		m_collisionMeshInterface = new btTriangleIndexVertexArray();
+
+		m_meshForCollision = new miMesh;
+		m_meshForCollision->m_iCount = g_app->m_cellbase->m_iCount;
+		m_meshForCollision->m_vCount = g_app->m_cellbase->m_vCount;
+		m_meshForCollision->m_indexType = miMeshIndexType::u32;
+		m_meshForCollision->m_stride = sizeof(btVector3);
+		m_meshForCollision->m_indices = (u8*)miMalloc(m_meshForCollision->m_iCount * sizeof(u32));
+		m_meshForCollision->m_vertices = (u8*)miMalloc(m_meshForCollision->m_vCount * sizeof(btVector3));
+		memset(m_meshForCollision->m_vertices, 0, m_meshForCollision->m_vCount * m_meshForCollision->m_stride);
+		memcpy(m_meshForCollision->m_indices, g_app->m_cellbase->m_indices, m_meshForCollision->m_iCount * sizeof(u32));
+		auto bvtptr = (btVector3*)m_meshForCollision->m_vertices;
+		auto vPtr = (miVertexTriangle*)mi.m_meshPtr->m_vertices;
+		for (int i = 0; i < m_meshForCollision->m_vCount; ++i)
+		{
+			bvtptr->m_floats[0] = vPtr->Position.x;
+			bvtptr->m_floats[1] = vPtr->Position.y;
+			bvtptr->m_floats[2] = vPtr->Position.z;
+			bvtptr++;
+			vPtr++;
+		}
+
+		btIndexedMesh part;
+		part.m_vertexBase = (const unsigned char*)m_meshForCollision->m_vertices;
+		part.m_vertexStride = m_meshForCollision->m_stride;
+		part.m_numVertices = m_meshForCollision->m_vCount;
+		part.m_triangleIndexBase = (const unsigned char*)m_meshForCollision->m_indices;
+		part.m_triangleIndexStride = sizeof(u32) * 3;
+		part.m_numTriangles = m_meshForCollision->m_iCount / 3;
+		part.m_indexType = PHY_INTEGER;
+
+		m_collisionMeshInterface->addIndexedMesh(part, PHY_INTEGER);
+	}
+
+	if (!m_collisionShape)
+		m_collisionShape = new btBvhTriangleMeshShape(m_collisionMeshInterface, true, false);
+
+	auto bvtptr = (btVector3*)m_meshForCollision->m_vertices;
 	auto vPtr = (miVertexTriangle*)mi.m_meshPtr->m_vertices;
 	for (u32 i = 0; i < mi.m_meshPtr->m_vCount; ++i)
 	{
@@ -137,10 +217,34 @@ void MapCell::InitNew()
 				break;
 			}
 		}
-		
+		bvtptr->m_floats[1] = vPtr->Position.y;
+		bvtptr++;
 		vPtr++;
 	}
-	
+
+	m_collisionShape->buildOptimizedBvh();
+
+	if (m_rigidBody)
+	{
+		if (m_rigidBody->getMotionState())
+			delete m_rigidBody->getMotionState();
+
+		g_app->m_physics->m_world->removeCollisionObject(m_rigidBody);
+
+		delete m_rigidBody;
+	}
+	{
+		btScalar mass(0.);
+		btTransform groundTransform;
+		groundTransform.setIdentity();
+		groundTransform.setOrigin(btVector3(m_position.x, m_position.y, m_position.z));
+		btVector3 localInertia(0, 0, 0);
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, m_collisionShape, localInertia);
+		m_rigidBody = new btRigidBody(rbInfo);
+		g_app->m_physics->m_world->addRigidBody(m_rigidBody);
+	}
+
 	if (!m_meshGPU0)
 	{
 		m_meshGPU0 = g_app->m_gs->CreateMesh(&mi);

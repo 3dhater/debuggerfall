@@ -96,11 +96,21 @@ struct TerrainVertex
 	v2f m_uv2;
 };
 
+class btTriangleMesh;
+class btBvhTriangleMeshShape;
+class btRigidBody;
+class btTriangleIndexVertexArray;
 class MapCell
 {
 public:
 	MapCell();
 	~MapCell();
+
+	btBvhTriangleMeshShape* m_collisionShape = 0;
+	//btTriangleMesh* m_collisionMesh = 0;
+	miMesh* m_meshForCollision = 0;
+	btTriangleIndexVertexArray* m_collisionMeshInterface = 0;
+	btRigidBody* m_rigidBody = 0;
 
 	bool m_needInit = true;
 	

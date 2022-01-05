@@ -19,6 +19,21 @@ class miMesh;
 class ShaderTerrain;
 struct miGPUDrawCommand;
 
+class btDiscreteDynamicsWorld;
+class btSequentialImpulseConstraintSolver;
+class btBroadphaseInterface;
+class btCollisionDispatcher;
+class btDefaultCollisionConfiguration;
+struct PhysicsEngine
+{
+	PhysicsEngine();
+	~PhysicsEngine();
+	btDefaultCollisionConfiguration* m_collisionConfiguration = 0;
+	btCollisionDispatcher* m_dispatcher = 0;
+	btBroadphaseInterface* m_overlappingPairCache = 0;
+	btSequentialImpulseConstraintSolver* m_solver = 0;
+	btDiscreteDynamicsWorld* m_world = 0;
+};
 
 class Application
 {
@@ -35,6 +50,8 @@ public:
 	v2f m_gpuDepthRange;
 	miCameraFly* m_activeCamera = 0;
 	ApplicationGUI* m_GUI = 0;
+
+	PhysicsEngine* m_physics = 0;
 
 	FILE* m_file_land = 0;
 	//FILE* m_file_ids = 0; // base data
