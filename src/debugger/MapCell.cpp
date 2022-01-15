@@ -60,8 +60,8 @@ void MapCell::InitNew()
 	m_position.z = m_cellData.pos.y;
 
 	m_aabb.reset();
-	m_aabb.m_min.set(-0.125f, -10.f, -0.125f, 0.f);
-	m_aabb.m_max.set(0.125f, 10.f, 0.125f, 0.f);
+	m_aabb.m_min.set(-125.f, -10000.f, -125.f, 0.f);
+	m_aabb.m_max.set(125.f, 10000.f, 125.f, 0.f);
 	
 	m_aabbTransformed = m_aabb;
 	m_aabbTransformed.m_min.x += m_cellData.pos.x;

@@ -304,7 +304,7 @@ vidOk:
 	m_physics->m_world->setDebugDrawer(g_debugDrawer);
 	m_physics->m_world->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawAabb);
 	
-	m_physics->m_world->setGravity(btVector3(0.f, -0.025f, 0.f));
+	m_physics->m_world->setGravity(btVector3(0.f, -9.025f, 0.f));
 
 	/*{
 		std::string src = "hello hello hello hello hello hello hello hello";
@@ -356,7 +356,7 @@ vidOk:
 	}
 
 #ifndef WORLDEDITOR
-	m_player->SetPosition(-490.082818, 0.079153, -490.06849);
+	m_player->SetPosition(0.082818, 60.03, 0.06849);
 #endif
 
 	if (!OpenMap())
@@ -441,7 +441,7 @@ void Application::MainLoop()
 				m_needUpdateMapView = true;
 
 			if (mgIsKeyHold(m_inputContext, MG_KEY_LSHIFT) || mgIsKeyHold(m_inputContext, MG_KEY_RSHIFT))
-				m_player->m_cameraFly->m_moveSpeed = 0.02f;
+				m_player->m_cameraFly->m_moveSpeed = 1000.0f;
 			else
 				m_player->m_cameraFly->m_moveSpeed = m_player->m_cameraFly->m_moveSpeedDefault;
 
@@ -527,9 +527,9 @@ void Application::MainLoop()
 		}
 
 #ifndef WORLDEDITOR
-		m_physics->m_world->stepSimulation(1.f / 60.f, 0);
-#endif
+		m_physics->m_world->stepSimulation(1.f / 60.f, 1);
 		m_player->Update(m_dt);
+#endif
 		
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
@@ -547,10 +547,10 @@ void Application::MainLoop()
 		m_gs->DrawLine3D(v4f(1.f, 0.f, 0.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorRed, &m_activeCamera->m_viewProjection);
 		m_gs->DrawLine3D(v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 0.f, 0.f, 0.f), ColorLime, &m_activeCamera->m_viewProjection);
 
-		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
-		m_gs->DrawLine3D(v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
-		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y - 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
-		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), v4f(g_testCellPosition.x + 0.125f, 0.f, g_testCellPosition.y + 0.125f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 125.f, 0.f, g_testCellPosition.y - 125.f, 0.f), v4f(g_testCellPosition.x - 125.f, 0.f, g_testCellPosition.y + 125.f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x + 125.f, 0.f, g_testCellPosition.y - 125.f, 0.f), v4f(g_testCellPosition.x + 125.f, 0.f, g_testCellPosition.y + 125.f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 125.f, 0.f, g_testCellPosition.y - 125.f, 0.f), v4f(g_testCellPosition.x + 125.f, 0.f, g_testCellPosition.y - 125.f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
+		m_gs->DrawLine3D(v4f(g_testCellPosition.x - 125.f, 0.f, g_testCellPosition.y + 125.f, 0.f), v4f(g_testCellPosition.x + 125.f, 0.f, g_testCellPosition.y + 125.f, 0.f), ColorWhite, &m_activeCamera->m_viewProjection);
 		
 		m_physics->m_world->debugDrawWorld();
 
@@ -616,86 +616,6 @@ bool Application::OpenMap()
 
 void Application::GenerateWorld()
 {
-	//miImage* heightMap = miLoadImage(L"../data/world/heightmap.png");
-	//if (!heightMap)
-	//	return;
-
-	///*m_testMapCell = new MapCell;
-	//m_testMapCell->Generate();*/
-	//
-	//// Создать ячейки. Записать их в файл.
-	//// m_mapCells будет хранить указатели на все ячейки.
-
-	//// 10 = 1km
-	//// 100 = 10km
-	//u32 cellsNumX = 100;
-	//u32 cellsNumY = 100;
-
-	//f32 cellSize = 0.01f;// 0.01f = 100m
-
-	//f32 mapSizeX = (f32)cellsNumX * cellSize; 
-	//f32 mapSizeY = (f32)cellsNumY * cellSize;
-
-	//f32 mapSizeHalfX = mapSizeX * 0.5f;
-	//f32 mapSizeHalfY = mapSizeY * 0.5f;
-
-	//v3f position;
-	//position.x = -mapSizeHalfX;
-	//position.z = -mapSizeHalfY;
-
-	//std::map<std::string, std::pair<v3f, u32>> vMap;
-
-	//for (u32 iy = 0; iy < cellsNumY; ++iy)
-	//{
-	//	for (u32 ix = 0; ix < cellsNumX; ++ix)
-	//	{
-	//		printf("%u %u\n", iy, ix);
-
-	//		MapCell* newCell = new MapCell;
-	//		newCell->m_position = position;
-	//		newCell->Generate(ix, iy, vMap, heightMap, mapSizeX, mapSizeY);
-
-	//		m_mapCells.push_back(newCell);
-	//		newCell->m_id = m_mapCells.size();
-
-	//		//////
-	//		//newCell->WriteToFile(ix, iy);
-	//		newCell->DeleteCPUMesh();
-
-	//		position.x += cellSize;
-	//	}
-	//
-	//	position.x = -mapSizeHalfX;
-	//	position.z += cellSize;
-	//}
-	//printf("MAP SIZE: %u\n", vMap.size());
-
-	//std::vector<v3f> vArray;
-	//MapToVec(vMap, vArray);
-	//
-	//{
-	//	miStringA str;
-	//	str += "../data/world/vertices.bin";
-
-	//	FILE* f = fopen(str.data(), "wb");
-
-	//	if (vArray.size())
-	//	{
-	//		u32 uncompSize = vArray.size() * sizeof(v3f);
-	//	//	fwrite(vArray.data(), vArray.size() * sizeof(v3f), 1, f);
-	//		auto compressBound = miGetCompressBound(uncompSize);
-	//		u8* compBuf = (u8*)malloc(compressBound);
-	//		u32 srcSize = uncompSize;
-	//		u32 compSize = compressBound;
-	//		miCompress(vArray.data(), srcSize, compBuf, &compSize, miCompressAlgorithm::Deflate, miCompressStrategy::Default);
-	//		fwrite(compBuf, compSize, 1, f);
-	//		free(compBuf);
-	//	}
-
-	//	fclose(f);
-	//}
-
-	//miDestroy(heightMap);
 }
 
 void Application::ReadWorld()
@@ -705,42 +625,10 @@ void Application::ReadWorld()
 
 void Application::DrawMapCell(MapCell* cell)
 {
-	//Mat4 W;
-	//W.setTranslation(cell->m_position);
-
-	//miSetMatrix(miMatrixType::World, &W);
-
-	//Mat4 WVP = m_activeCamera->m_projection * m_activeCamera->m_view * W;
-	//miSetMatrix(miMatrixType::WorldViewProjection, &WVP);
-	//m_gpu->SetTexture(0, miGetBlackTexture());
-	//m_gpu->SetMesh(cell->m_meshGPU0[cell->m_activeLOD[0]]);
-	//m_gpu->Draw();
-	//m_gpu->SetMesh(cell->m_meshGPU1[cell->m_activeLOD[1]]);
-	//m_gpu->Draw();
-	//m_gpu->SetMesh(cell->m_meshGPU2[cell->m_activeLOD[2]]);
-	//m_gpu->Draw();
-	//m_gpu->SetMesh(cell->m_meshGPU3[cell->m_activeLOD[3]]);
-	//m_gpu->Draw();
 }
 
 void Application::FindLODs()
 {
-	//for (u32 i = 0; i < m_visibleMapCells.m_size; ++i)
-	//{
-	//	auto cell = m_visibleMapCells.m_data[i];
-	//	
-	//	for (u32 k = 0; k < 4; ++k)
-	//	{
-	//		f32 d = cell->m_data->m_positionInWorld[k].distance(m_activeCamera->m_localPosition);
-
-	//		if (d < g_terrainLODDistance_0)        cell->m_data->m_activeLOD[k] = 0;
-	//		else if (d < g_terrainLODDistance_1)   cell->m_data->m_activeLOD[k] = 1;
-	//		//else if (d < g_terrainLODDistance_2)   cell->m_activeLOD[k] = 2;
-	//		//else if (d < g_terrainLODDistance_3)   cell->m_activeLOD[k] = 3;
-	//		//else if (d < g_terrainLODDistance_4)   cell->m_activeLOD[k] = 4;
-	//		else cell->m_data->m_activeLOD[k] = 2;
-	//	}
-	//}
 }
 
 void Application::FrustumCullMap()
@@ -800,40 +688,13 @@ void Application::FrustumCullMap()
 	//}
 }
 
-//void Application::FindCurrentCellID()
-//{
-//	m_player->m_cellID = -1;
-//	//for (u32 i = 0; i < m_mapCells.m_size; ++i)
-//	//{
-//	//	if (m_activeCamera->m_localPosition.x < m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_min.x)
-//	//		continue;
-//	//	if (m_activeCamera->m_localPosition.x > m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_max.x)
-//	//		continue;
-//	//	if (m_activeCamera->m_localPosition.z < m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_min.z)
-//	//		continue;
-//	//	if (m_activeCamera->m_localPosition.z > m_mapCells.m_data[i]->m_data->m_aabbTransformed.m_max.z)
-//	//		continue;
-//
-//	//	/*if (m_activeCamera->m_localPosition.x >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.x
-//	//		&& m_activeCamera->m_localPosition.x <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.x
-//	//		&& m_activeCamera->m_localPosition.z >= m_mapCells.m_data[i]->m_aabbTransformed.m_min.z
-//	//		&& m_activeCamera->m_localPosition.z <= m_mapCells.m_data[i]->m_aabbTransformed.m_max.z)
-//	//	{
-//	//		m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_id;
-//	//		return;
-//	//	}*/
-//	//	m_player->m_cellID = (s32)m_mapCells.m_data[i]->m_data->m_id;
-//	//	return;
-//	//}
-//}
-
 void Application::_updateMapCell()
 {
 	m_needUpdateMapCell = false;
 
-	// 1.f = 1km
-	f64 map_size_x = 1000.0;
-	f64 map_size_y = 1000.0;
+	// 1000.f = 1km
+	f64 map_size_x = 1000000.0;
+	f64 map_size_y = 1000000.0;
 
 	f64 map_half_size_x = map_size_x * 0.5;
 	f64 map_half_size_y = map_size_y * 0.5;
@@ -845,10 +706,10 @@ void Application::_updateMapCell()
 	s32 y = 0;
 
 	if (pos_x > 0.0)
-		x = (s32)std::ceil(pos_x / 0.25);
+		x = (s32)std::ceil(pos_x / 250.);
 
 	if (pos_y > 0.0)
-		y = (s32)std::ceil(pos_y / 0.25);
+		y = (s32)std::ceil(pos_y / 250.);
 
 	//s32 real_x = x;
 	//s32 real_y = y;

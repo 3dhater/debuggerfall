@@ -41,11 +41,11 @@
 // создать базовый меш дл€ €чеек.
 void create_cell_base()
 {
-	s32 quadNum = 100;
-	f32 sizeHalf = 0.25f * 0.5f; // 250 meters
+	s32 quadNum = 50;
+	f32 sizeHalf = 50.f * 0.5f; // 50 meters
 
 	miMesh * m_cellTemplate = new miMesh;
-	m_cellTemplate->m_indexType = miMeshIndexType::u32;
+	m_cellTemplate->m_indexType = miMeshIndexType::u16;
 	m_cellTemplate->m_vertexType = miMeshVertexType::Triangle;
 	m_cellTemplate->m_aabb.reset();
 	m_cellTemplate->m_vCount = (quadNum + 1) * (quadNum + 1);
@@ -53,12 +53,12 @@ void create_cell_base()
 	m_cellTemplate->m_stride = sizeof(miVertexTriangle);
 	printf("iCount: %i\n", m_cellTemplate->m_iCount);
 	m_cellTemplate->m_vertices = (u8*)miMalloc(m_cellTemplate->m_stride * m_cellTemplate->m_vCount);
-	m_cellTemplate->m_indices = (u8*)miMalloc(sizeof(u32) * m_cellTemplate->m_iCount);
+	m_cellTemplate->m_indices = (u8*)miMalloc(sizeof(u16) * m_cellTemplate->m_iCount);
 
 	miVertexTriangle* vPtr = (miVertexTriangle*)m_cellTemplate->m_vertices;
-	u32* iPtr = (u32*)m_cellTemplate->m_indices;
+	u16* iPtr = (u16*)m_cellTemplate->m_indices;
 
-	f32 quadSize = 0.0025f;
+	f32 quadSize = 1.f;
 	u32 vertexIndexCounter = 0;
 
 	v3f pos(-sizeHalf, 0.f, -sizeHalf);	
@@ -112,153 +112,156 @@ void create_cell_base()
 	delete m_cellTemplate;
 }
 
-void gen_basic_cells()
-{
-	FILE* f = fopen("../data/world/land.bin", "wb");
-	if (f)
-	{
-		std::default_random_engine generator;
-		std::uniform_int_distribution<int> int_distribution(0, 1);
-		std::uniform_real_distribution<f64> position_distribution(-0.125, 0.125);
-		std::uniform_real_distribution<f64> moveUp_distribution(0., 0.05);
-		std::uniform_real_distribution<f64> moveDown_distribution(0., 0.01);
-		std::uniform_real_distribution<f64> moveUpDownRadius_distribution(0.01, 0.15);
-
-		int int_dice_roll = int_distribution(generator);
-		f32 position_dice_roll = position_distribution(generator);
-
-		f32 pos_x_origin = -500.0f - 0.125f;
-		f32 pos_z_origin = -500.0f - 0.125f;
-		f32 pos_x = pos_x_origin;
-		f32 pos_z = pos_z_origin;
-		int id = 0;
-
-		for (u32 iy = 0; iy < 4000; ++iy)
-		{
-			for (u32 ix = 0; ix < 4000; ++ix)
-			{
-				CellData cd;
-				memset(&cd, 0, sizeof(CellData));
-
-				cd.ids[0] = id;
-				cd.ids[1] = cd.ids[0] + 1;
-				cd.ids[2] = cd.ids[0] - 1;
-
-				cd.ids[3] = cd.ids[0] + 4000 + 1;
-				cd.ids[4] = cd.ids[3] - 1;
-				cd.ids[5] = cd.ids[4] - 1;
-
-				cd.ids[6] = cd.ids[0] - 4000 + 1;
-				cd.ids[7] = cd.ids[6] - 1;
-				cd.ids[8] = cd.ids[7] - 1;
-
-				if (ix == 0)
-				{
-					cd.ids[5] = -1;
-					cd.ids[2] = -1;
-					cd.ids[8] = -1;
-				}
-				else if (ix == 3999)
-				{
-					cd.ids[3] = -1;
-					cd.ids[1] = -1;
-					cd.ids[6] = -1;
-				}
-
-				if (iy == 0)
-				{
-					cd.ids[6] = -1;
-					cd.ids[7] = -1;
-					cd.ids[8] = -1;
-				}
-				else if (iy == 3999)
-				{
-					cd.ids[3] = -1;
-					cd.ids[4] = -1;
-					cd.ids[5] = -1;
-				}
-				cd.pos.x = pos_x;
-				cd.pos.y = pos_z;
-
-				// add random CellGenData
-				for (int gi = 0; gi < CellGenDataMax; ++gi)
-				{
-					cd.genData[gi].genType = int_distribution(generator);
-					if (cd.genData[gi].genType > (u8)CellGenType_count)
-						cd.genData[gi].genType = 0;
-
-					cd.genData[gi].pos[0] = (float)position_distribution(generator);
-					cd.genData[gi].pos[2] = (float)position_distribution(generator);
-
-					switch (cd.genData[gi].genType)
-					{
-					case CellGenType_MoveDown:
-						cd.genData[gi].pos[1] = (float)moveDown_distribution(generator);
-						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
-						break;
-					case CellGenType_MoveUp:
-						cd.genData[gi].pos[1] = (float)moveUp_distribution(generator);
-						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
-						break;
-					case CellGenType_count:
-					default:
-						break;
-					}
-
-					if(gi > 5)
-						cd.genData[gi].genType = CellGenType_count;
-				}
-				
-				pos_x += 0.25f;
-				
-				++id;
-
-				fwrite(&cd, sizeof(CellData), 1, f);
-			}
-			printf("%i : 4000\n", iy);
-			//fflush(f);
-			pos_x = pos_x_origin;
-			pos_z += 0.25f;
-		}
-		fclose(f);
-	}
-	else
-	{
-		printf("Can't open file\n");
-	}
-	/*miStringA str;
-	str += "../data/world/";
-	str += "gen.dpk";
-
-	if (std::filesystem::exists(str.data()))
-		std::filesystem::remove(str.data());
-
-	dpk_file dpk;
-	memset(&dpk, 0, sizeof(dpk_file));
-
-	auto res = dpk_open(str.data(), &dpk);
-	if (res == DPK_ER_OK)
-	{
-		for (u32 iy = 0; iy < 10000; ++iy)
-		{
-			for (u32 ix = 0; ix < 10000; ++ix)
-			{
-				printf("Create cell %i.%i\n", iy, ix);
-
-				miStringA name;
-				name.append_hex(ix);
-				int data = 0;
-				dpk_add_data(&dpk, &data, sizeof(data), sizeof(data), DPK_CMP_NOCOMPRESS, name.data());
-			}
-		}
-		res = dpk_save(&dpk);
-		if (res != DPK_ER_OK)
-		{
-			printf("DPK SAVE ERROR: %i\n", res);
-		}
-		dpk_close(&dpk);
-	}*/
-}
+//void gen_basic_cells()
+//{
+//	FILE* f = fopen("../data/world/land.bin", "wb");
+//	if (f)
+//	{
+//		f32 map_size = 40000.f;
+//		f32 map_size_half = map_size * 0.5f;
+//
+//		std::default_random_engine generator;
+//		std::uniform_int_distribution<int> int_distribution(0, 1);
+//		std::uniform_real_distribution<f64> position_distribution(-125., 125.);
+//		std::uniform_real_distribution<f64> moveUp_distribution(0., 50.0);
+//		std::uniform_real_distribution<f64> moveDown_distribution(0., 1.0);
+//		std::uniform_real_distribution<f64> moveUpDownRadius_distribution(1., 150.);
+//
+//		int int_dice_roll = int_distribution(generator);
+//		f32 position_dice_roll = position_distribution(generator);
+//
+//		f32 pos_x_origin = -map_size_half - 50.f;
+//		f32 pos_z_origin = -map_size_half - 50.f;
+//		f32 pos_x = pos_x_origin;
+//		f32 pos_z = pos_z_origin;
+//		int id = 0;
+//
+//		for (u32 iy = 0; iy < 800; ++iy)
+//		{
+//			for (u32 ix = 0; ix < 800; ++ix)
+//			{
+//				CellData cd;
+//				memset(&cd, 0, sizeof(CellData));
+//
+//				cd.ids[0] = id;
+//				cd.ids[1] = cd.ids[0] + 1;
+//				cd.ids[2] = cd.ids[0] - 1;
+//
+//				cd.ids[3] = cd.ids[0] + 4000 + 1;
+//				cd.ids[4] = cd.ids[3] - 1;
+//				cd.ids[5] = cd.ids[4] - 1;
+//
+//				cd.ids[6] = cd.ids[0] - 4000 + 1;
+//				cd.ids[7] = cd.ids[6] - 1;
+//				cd.ids[8] = cd.ids[7] - 1;
+//
+//				if (ix == 0)
+//				{
+//					cd.ids[5] = -1;
+//					cd.ids[2] = -1;
+//					cd.ids[8] = -1;
+//				}
+//				else if (ix == 3999)
+//				{
+//					cd.ids[3] = -1;
+//					cd.ids[1] = -1;
+//					cd.ids[6] = -1;
+//				}
+//
+//				if (iy == 0)
+//				{
+//					cd.ids[6] = -1;
+//					cd.ids[7] = -1;
+//					cd.ids[8] = -1;
+//				}
+//				else if (iy == 3999)
+//				{
+//					cd.ids[3] = -1;
+//					cd.ids[4] = -1;
+//					cd.ids[5] = -1;
+//				}
+//				cd.pos.x = pos_x;
+//				cd.pos.y = pos_z;
+//
+//				// add random CellGenData
+//				for (int gi = 0; gi < CellGenDataMax; ++gi)
+//				{
+//					cd.genData[gi].genType = int_distribution(generator);
+//					if (cd.genData[gi].genType > (u8)CellGenType_count)
+//						cd.genData[gi].genType = 0;
+//
+//					cd.genData[gi].pos[0] = (float)position_distribution(generator);
+//					cd.genData[gi].pos[2] = (float)position_distribution(generator);
+//
+//					switch (cd.genData[gi].genType)
+//					{
+//					case CellGenType_MoveDown:
+//						cd.genData[gi].pos[1] = (float)moveDown_distribution(generator);
+//						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
+//						break;
+//					case CellGenType_MoveUp:
+//						cd.genData[gi].pos[1] = (float)moveUp_distribution(generator);
+//						cd.genData[gi].f32Data1 = (float)moveUpDownRadius_distribution(generator);
+//						break;
+//					case CellGenType_count:
+//					default:
+//						break;
+//					}
+//
+//					if(gi > 5)
+//						cd.genData[gi].genType = CellGenType_count;
+//				}
+//				
+//				pos_x += 250.f;
+//				
+//				++id;
+//
+//				fwrite(&cd, sizeof(CellData), 1, f);
+//			}
+//			printf("%i : 4000\n", iy);
+//			//fflush(f);
+//			pos_x = pos_x_origin;
+//			pos_z += 250.f;
+//		}
+//		fclose(f);
+//	}
+//	else
+//	{
+//		printf("Can't open file\n");
+//	}
+//	/*miStringA str;
+//	str += "../data/world/";
+//	str += "gen.dpk";
+//
+//	if (std::filesystem::exists(str.data()))
+//		std::filesystem::remove(str.data());
+//
+//	dpk_file dpk;
+//	memset(&dpk, 0, sizeof(dpk_file));
+//
+//	auto res = dpk_open(str.data(), &dpk);
+//	if (res == DPK_ER_OK)
+//	{
+//		for (u32 iy = 0; iy < 10000; ++iy)
+//		{
+//			for (u32 ix = 0; ix < 10000; ++ix)
+//			{
+//				printf("Create cell %i.%i\n", iy, ix);
+//
+//				miStringA name;
+//				name.append_hex(ix);
+//				int data = 0;
+//				dpk_add_data(&dpk, &data, sizeof(data), sizeof(data), DPK_CMP_NOCOMPRESS, name.data());
+//			}
+//		}
+//		res = dpk_save(&dpk);
+//		if (res != DPK_ER_OK)
+//		{
+//			printf("DPK SAVE ERROR: %i\n", res);
+//		}
+//		dpk_close(&dpk);
+//	}*/
+//}
 
 //void gen_cells_masks()
 //{
@@ -543,7 +546,7 @@ void print_dpk(const char* fileName)
 int main(int argc, char* argv[])
 {
 	printf("Commands:\n");
-	printf("\"-gen_basic_cells\" - create 1km x 1km cells. It will erase old cells.\n");
+	//printf("\"-gen_basic_cells\" - create 1km x 1km cells. It will erase old cells.\n");
 	//printf("\"-gen_cells_masks\" - create mask/PNG files for each cell.\n");
 	//printf("\"-gen_regions\" - create regions.\n");
 	printf("\"-print_dpk \"dpk file\" \" - print information about dpk file.\n");
@@ -587,7 +590,7 @@ int main(int argc, char* argv[])
 
 		if (strcmp(argv[i], "-gen_basic_cells") == 0)
 		{
-			gen_basic_cells();
+			//gen_basic_cells();
 		}
 		/*else if (strcmp(argv[i], "-create_cells_bdata") == 0)
 		{

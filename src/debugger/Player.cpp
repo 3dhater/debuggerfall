@@ -16,10 +16,9 @@ Player::Player()
 {
 	m_cameraFly = new miCameraFly;
 	m_cameraFly->m_localPosition.set(0.f, 0.0002f, 0.f, 0.f);
-	m_cameraFly->m_near = 0.0001000f;
-	m_cameraFly->m_far = 1000.f;
-	m_cameraFly->m_moveSpeedDefault = 0.001f;
-	m_cameraFly->m_moveSpeedDefault = 0.001f;
+	m_cameraFly->m_near = 0.1000f;
+	m_cameraFly->m_far = 10000.f;
+	m_cameraFly->m_moveSpeedDefault = 100.001f;
 	{
 		Mat4 lookAt;
 		math::makeLookAtRHMatrix(lookAt, m_cameraFly->m_localPosition, v4f(0.f, 0.f, 1.f, 0.f), v4f(0.f, 1.f, 0.f, 0.f));
@@ -114,10 +113,10 @@ void Player::MoveRB(const v4f& vec)
 {
 	auto RotInv = m_cameraFly->m_rotationMatrix;
 	RotInv.invert();
-	auto vel = math::mul(vec, RotInv) * 3.1f;
+	auto vel = math::mul(vec, RotInv) * 160.021f;
 	m_rigidBody->setLinearVelocity(btVector3(
 		vel.x, 
-		vel.y,
+		m_rigidBody->getLinearVelocity().m_floats[1],
 		vel.z));
 }
 
@@ -147,16 +146,16 @@ void Player::SetPosition(f32 x, f32 y, f32 z)
 		btVector3 localInertia(0, 0, 0);
 		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
 
-		auto m_collisionShape = new btCapsuleShape(0.0005, 0.0017f);
-		//m_collisionShape->setMargin(0.0000001f);
+		auto m_collisionShape = new btCapsuleShape(0.6, 1.8f);
+		m_collisionShape->setMargin(0.0000001f);
 
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, m_collisionShape, localInertia);
 
 		m_rigidBody = new btRigidBody(rbInfo);
 		m_rigidBody->setActivationState(DISABLE_DEACTIVATION);
 		m_rigidBody->setAngularFactor(btVector3(0.f, 0.f, 0.f));
-		m_rigidBody->setCcdMotionThreshold(0.00001);
-		m_rigidBody->setCcdSweptSphereRadius(0.0002);
+		//m_rigidBody->setCcdMotionThreshold(0.00001);
+		//m_rigidBody->setCcdSweptSphereRadius(0.2);
 		m_rigidBody->setFriction(1.f);
 		//m_rigidBody->setContactProcessingThreshold(0.01f);
 		
