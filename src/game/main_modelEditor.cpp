@@ -5,7 +5,21 @@
 #include "framework/Window.h"
 #include "framework/Rectangle.h"
 
+#define WINDOWS_WINDOW_FOR_GS
+#ifdef WINDOWS_WINDOW_FOR_GS
+#include <Windows.h>
+HWND d3dwindow = 0;
+//HWND menuwindow = 0;
+LRESULT CALLBACK MenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+#define IDM_FILE_NEW 1
+#define IDM_FILE_OPEN 2
+#define IDM_FILE_QUIT 3
+#endif
+
 class ModelEditor;
+
+
 
 class WindowMain : public mgf::SystemWindow
 {
@@ -18,7 +32,8 @@ public:
 	WindowMain(ModelEditor*, int windowFlags, const mgPoint& windowPosition, const mgPoint& windowSize);
 	virtual ~WindowMain();
 	
-	virtual void OnSize();
+	virtual void OnSize() override;
+	virtual void OnMove() override;
 };
 
 WindowMain::WindowMain(
@@ -78,6 +93,8 @@ public:
 	mgTexture* m_GDIRenderTexture = 0;
 	mgf::GSTexture* m_renderTexture = 0;
 
+	mgPoint m_renderRectSize;
+
 	bool Init();
 	void Run();
 	void Quit();
@@ -129,8 +146,18 @@ WindowMainMenu::WindowMainMenu(ModelEditor* app)
 	UseMenu(true, app->m_menuFont);
 	BeginMenu(L"File");
 	{
+#ifndef WINDOWS_WINDOW_FOR_GS
 		AddMenuItem(0, 0);
 		AddMenuItem(L"Exit", WindowMainMenu::MenuItemID_File_Exit);
+#endif
+		EndMenu();
+	}
+	BeginMenu(L"View");
+	{
+#ifndef WINDOWS_WINDOW_FOR_GS
+		AddMenuItem(0, 0);
+		AddMenuItem(L"Reset camera", WindowMainMenu::MenuItemID_File_Exit);
+#endif
 		EndMenu();
 	}
 	RebuildMenu();
@@ -178,17 +205,70 @@ bool ModelEditor::Init()
 	m_GUIContext = m_framework->CreateContext(m_windowMain, m_backend);
 	m_menuFont = m_backend->CreateFontPrivate(L"..\\data\\fonts\\lt_internet\\LTInternet-Regular.ttf", 11, false, false, L"LT Internet");
 
-	m_windowMenu = new WindowMainMenu(this);
 
 	m_windowMain->OnSize();
 
-	mgPoint renderRectSize(m_windowMain->GetSize().x, 400);
-	m_renderRect = new mgf::Rectangle(m_windowMenu);
-	m_renderRect->SetPositionAndSize(0, 0,
-		renderRectSize.x, renderRectSize.y);
+	m_renderRectSize.x = m_windowMain->GetSize().x;
+	m_renderRectSize.y = 400;
 	
+
 	mgf::GSD3D11* gsd3d11 = new mgf::GSD3D11();
 	m_gs = gsd3d11;
+
+#ifdef WINDOWS_WINDOW_FOR_GS
+	m_backend->SetEndDrawIndent(0, 20);
+	d3dwindow = CreateWindowA("BUTTON", "",
+		WS_VISIBLE | BS_OWNERDRAW | WS_POPUP | WS_DISABLED,
+		0, 0, m_renderRectSize.x, m_renderRectSize.y, (HWND)m_windowMain->GetOSData()->handle, NULL, GetModuleHandle(0), NULL);
+	
+	HMENU hMenubar = CreateMenu();
+	HMENU hMenu = CreateMenu();
+	AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&New");
+	AppendMenuW(hMenu, MF_STRING, IDM_FILE_OPEN, L"&Open");
+	AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(hMenu, MF_STRING, IDM_FILE_QUIT, L"&Quit");
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&File");
+
+	hMenu = CreateMenu();
+	AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&Reset camera");
+	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&View");
+
+	/*WNDCLASSEXW wcex;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = MenuWndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = GetModuleHandle(0);
+	wcex.hIcon = 0;
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = 0;
+	wcex.lpszClassName = L"mMenu";
+	wcex.hIconSm = 0;
+	RegisterClassExW(&wcex);*/
+
+	//menuwindow = CreateWindowW(wcex.lpszClassName, L"",
+	//	WS_VISIBLE | WS_POPUP ,
+	//	0, 0, m_renderRectSize.x, 20, (HWND)m_windowMain->GetOSData()->handle, NULL, GetModuleHandle(0), NULL);
+
+	SetMenu((HWND)m_windowMain->GetOSData()->handle, hMenubar);
+
+	m_windowMain->OnMove();
+
+	static mgf::SystemWindow tmpwnd;
+	tmpwnd.GetOSData()->handle = d3dwindow;
+	tmpwnd.SetSize(m_renderRectSize.x, m_renderRectSize.y);
+	if (!gsd3d11->Init(&tmpwnd, 0))
+	{
+		return false;
+	}
+#else
+	m_windowMenu = new WindowMainMenu(this);
+	m_renderRect = new mgf::Rectangle(m_windowMenu);
+	m_renderRect->SetPositionAndSize(0, 0,
+		m_renderRectSize.x, m_renderRectSize.y);
+
 	if (!gsd3d11->Init(m_windowMain, 0))
 	{
 		return false;
@@ -196,24 +276,25 @@ bool ModelEditor::Init()
 
 	mgf::GSTextureInfo fboinfo;
 	fboinfo.m_filter = mgf::GSTextureFilter::PPP;
-	m_renderTexture = gsd3d11->CreateRenderTargetTexture(renderRectSize.x, renderRectSize.y, &fboinfo);
+	m_renderTexture = gsd3d11->CreateRenderTargetTexture(m_renderRectSize.x, m_renderRectSize.y, &fboinfo);
 	gsd3d11->SetRenderTarget(m_renderTexture);
-	gsd3d11->SetViewport(0, 0, renderRectSize.x, renderRectSize.y, 0, 0);
-
-	float cclr[4] = { 1.f, 0.4f, 0.4f, 1.f };
-	m_gs->SetClearColor(cclr);
-	m_gs->ClearAll();
-	
+		
 	m_GDIRenderTextureImage = new mgf::Image;
 	mgColor c;
 	c.r = c.g = c.b = c.a = 1.f;
-	m_GDIRenderTextureImage->Create(renderRectSize.x, renderRectSize.y, c);
+	m_GDIRenderTextureImage->Create(m_renderRectSize.x, m_renderRectSize.y, c);
 
 	gsd3d11->GetTextureCopyForImage(m_renderTexture, m_GDIRenderTextureImage);
 	
 	m_GDIRenderTexture = m_backend->CreateTexture(m_GDIRenderTextureImage->GetMGImage());
 	m_renderRect->SetTexture(m_GDIRenderTexture);
+#endif
 
+	gsd3d11->SetViewport(0, 0, m_renderRectSize.x, m_renderRectSize.y, 0, 0);
+
+	float cclr[4] = { 1.f, 0.4f, 0.4f, 1.f };
+	m_gs->SetClearColor(cclr);
+	m_gs->ClearAll();
 
 	m_windowMain->OnSize();
 	return true;
@@ -228,20 +309,69 @@ void ModelEditor::Run()
 	{
 		//cc.setAsIntegerRGB(cci++);
 		//m_gs->SetClearColor(&cc.r);
+		m_framework->DrawAll();
 
+#ifdef WINDOWS_WINDOW_FOR_GS
+		m_gs->BeginDraw();
+		m_gs->ClearAll();
+		m_gs->EndDraw();
+		m_gs->SwapBuffers();
+#else
 		m_gs->ClearAll();
 
 		m_gs->GetTextureCopyForImage(m_renderTexture, m_GDIRenderTextureImage);
 		m_backend->UpdateTexture(m_GDIRenderTexture, m_GDIRenderTextureImage->GetMGImage());
-		
-		m_framework->DrawAll();
+#endif
+
 	}
 }
 
 void WindowMain::OnSize()
 {
 	SystemWindow::OnSize();
-
-	if(m_app->m_windowMenu)
+	if (m_app->m_windowMenu)
 		m_app->m_windowMenu->SetSize(GetSize().x, GetSize().y);
 }
+
+void WindowMain::OnMove()
+{
+	SystemWindow::OnMove();
+
+#ifdef WINDOWS_WINDOW_FOR_GS
+	if (d3dwindow)
+	{
+		RECT clrct;
+		GetClientRect((HWND)GetOSData()->handle, &clrct);
+		POINT pt;
+		pt.x = clrct.left;
+		pt.y = clrct.top;
+		ClientToScreen((HWND)GetOSData()->handle, &pt);
+		clrct.left = pt.x;
+		clrct.top = pt.y;
+		pt.x = clrct.right;
+		pt.y = clrct.bottom;
+		ClientToScreen((HWND)GetOSData()->handle, &pt);
+		clrct.right = pt.x;
+		clrct.bottom = pt.y;
+
+		MoveWindow(d3dwindow, clrct.left, clrct.top,
+			m_app->m_renderRectSize.x,
+			m_app->m_renderRectSize.y,
+			FALSE);
+
+		/*MoveWindow(menuwindow, clrct.left, clrct.top,
+			m_app->m_renderRectSize.x,
+			20,
+			FALSE);*/
+		//menuwindow
+	}
+#endif
+}
+
+#ifdef WINDOWS_WINDOW_FOR_GS
+LRESULT CALLBACK MenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+#endif
+
