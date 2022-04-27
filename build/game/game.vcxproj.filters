@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="migui">
+      <UniqueIdentifier>{d3815d4c-a45a-4b75-9066-d51520ec733c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="migui\framework">
+      <UniqueIdentifier>{6b2d3595-73f9-4caa-a24b-7673c1a742be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="migui\framework\DirectXTK">
+      <UniqueIdentifier>{a83502b2-ecf0-42f3-9478-9f0d23255ec0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\game\game_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\main_game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\main_modelEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgCursor.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgDockPanel.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementButton.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementList.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementRectangle.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementTable.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementText.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgElementTextInput.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgFont.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgMenu.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgPopup.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\mgWindow.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\miGUI.c">
+      <Filter>migui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Aabb.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\AudioEngine.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\BackendD3D11.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\BackendGDI.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\BackendOpenGL.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Button.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Context.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Element.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\FontImpl.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Framework.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Icons.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Image.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Image_bmp.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Image_png.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\ListBox.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\lodepng.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Mat.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Popup.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Quat.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Ray.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Rectangle.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\SystemWindow.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Table.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Text.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\TextBuffer.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\TextInput.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Vec.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Window.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GS.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Mesh.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Shader.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11ShaderScreenQuad.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Texture.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Mesh.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\framework\Log.cpp">
+      <Filter>migui\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\miGUI\src\DirectXTK\Src\DDSTextureLoader.cpp">
+      <Filter>migui\framework\DirectXTK</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

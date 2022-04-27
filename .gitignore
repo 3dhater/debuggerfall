@@ -41,3 +41,5 @@ build/generators/Release
 editor_data/
 build/debugger/Debug
 build/debugger/Release
+build/game/Debug
+build/game/Release
