@@ -90,15 +90,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;MG_NO_DLL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\miGUI\src;E:\Code\miGUI\src\DirectXTK\Inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Code\miGUI\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>D:\Code\migui\libs\vs\32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -107,9 +108,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;MG_NO_DLL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\miGUI\src;E:\Code\miGUI\src\DirectXTK\Inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Code\miGUI\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <FloatingPointModel>Fast</FloatingPointModel>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -120,21 +121,23 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>D:\Code\migui\libs\vs\32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;MG_NO_DLL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\miGUI\src;E:\Code\miGUI\src\DirectXTK\Inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Code\miGUI\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>D:\Code\migui\libs\vs\64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,9 +146,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;MG_NO_DLL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Code\miGUI\src;E:\Code\miGUI\src\DirectXTK\Inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Code\miGUI\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <FloatingPointModel>Fast</FloatingPointModel>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -156,59 +159,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>D:\Code\migui\libs\vs\64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\miGUI\src\DirectXTK\Src\DDSTextureLoader.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Aabb.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\AudioEngine.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\BackendD3D11.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\BackendGDI.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\BackendOpenGL.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Button.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Context.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Element.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\FontImpl.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Framework.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GS.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Mesh.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Shader.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11ShaderScreenQuad.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\GSD3D11Texture.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Icons.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Image.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Image_bmp.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Image_png.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\ListBox.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\lodepng.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Log.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Mat.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Mesh.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Popup.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Quat.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Ray.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Rectangle.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\SystemWindow.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Table.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Text.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\TextBuffer.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\TextInput.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Vec.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\framework\Window.cpp" />
-    <ClCompile Include="..\..\..\miGUI\src\mgCursor.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgDockPanel.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementButton.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementList.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementRectangle.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementTable.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementText.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgElementTextInput.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgFont.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgMenu.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgPopup.c" />
-    <ClCompile Include="..\..\..\miGUI\src\mgWindow.c" />
-    <ClCompile Include="..\..\..\miGUI\src\miGUI.c" />
     <ClCompile Include="..\..\src\game\game_main.cpp" />
     <ClCompile Include="..\..\src\game\main_game.cpp" />
     <ClCompile Include="..\..\src\game\main_modelEditor.cpp" />

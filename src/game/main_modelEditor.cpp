@@ -5,21 +5,29 @@
 #include "framework/Window.h"
 #include "framework/Rectangle.h"
 
-#define WINDOWS_WINDOW_FOR_GS
-#ifdef WINDOWS_WINDOW_FOR_GS
+// there is 3 types of menu 
+// (1)native menu, (2)migui with system window, and (3)migui without system window
+// comment all for 3
+//#define DEMO_NATIVE_WIN32MENU
+#define DEMO_SYSTEM_POPUP_MENU
+
+#ifdef DEMO_NATIVE_WIN32MENU
 #include <Windows.h>
 HWND d3dwindow = 0;
 //HWND menuwindow = 0;
-LRESULT CALLBACK MenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 #define IDM_FILE_NEW 1
 #define IDM_FILE_OPEN 2
 #define IDM_FILE_QUIT 3
 #endif
 
+// I think this is unnecessary. 
+//#if defined(DEMO_NATIVE_WIN32MENU) && defined(DEMO_SYSTEM_POPUP_MENU)
+//#undef DEMO_SYSTEM_POPUP_MENU
+//#endif
+
 class ModelEditor;
-
-
 
 class WindowMain : public mgf::SystemWindow
 {
@@ -143,10 +151,16 @@ WindowMainMenu::WindowMainMenu(ModelEditor* app)
 	this->SetWithTitlebar(false);
 
 	this->SetNoMenuBG(false);
-	UseMenu(true, app->m_menuFont);
+
+	bool useSystemWindowMenu = false;
+#ifdef DEMO_SYSTEM_POPUP_MENU
+	useSystemWindowMenu = true;
+#endif
+
+	UseMenu(true, useSystemWindowMenu, app->m_menuFont);
 	BeginMenu(L"File");
 	{
-#ifndef WINDOWS_WINDOW_FOR_GS
+#ifndef DEMO_NATIVE_WIN32MENU
 		AddMenuItem(0, 0);
 		AddMenuItem(L"Exit", WindowMainMenu::MenuItemID_File_Exit);
 #endif
@@ -154,7 +168,7 @@ WindowMainMenu::WindowMainMenu(ModelEditor* app)
 	}
 	BeginMenu(L"View");
 	{
-#ifndef WINDOWS_WINDOW_FOR_GS
+#ifndef DEMO_NATIVE_WIN32MENU
 		AddMenuItem(0, 0);
 		AddMenuItem(L"Reset camera", WindowMainMenu::MenuItemID_File_Exit);
 #endif
@@ -205,7 +219,6 @@ bool ModelEditor::Init()
 	m_GUIContext = m_framework->CreateContext(m_windowMain, m_backend);
 	m_menuFont = m_backend->CreateFontPrivate(L"..\\data\\fonts\\lt_internet\\LTInternet-Regular.ttf", 11, false, false, L"LT Internet");
 
-
 	m_windowMain->OnSize();
 
 	m_renderRectSize.x = m_windowMain->GetSize().x;
@@ -215,11 +228,22 @@ bool ModelEditor::Init()
 	mgf::GSD3D11* gsd3d11 = new mgf::GSD3D11();
 	m_gs = gsd3d11;
 
-#ifdef WINDOWS_WINDOW_FOR_GS
+#ifdef DEMO_NATIVE_WIN32MENU
 	m_backend->SetEndDrawIndent(0, 20);
-	d3dwindow = CreateWindowA("BUTTON", "",
-		WS_VISIBLE | BS_OWNERDRAW | WS_POPUP | WS_DISABLED,
-		0, 0, m_renderRectSize.x, m_renderRectSize.y, (HWND)m_windowMain->GetOSData()->handle, NULL, GetModuleHandle(0), NULL);
+
+	WNDCLASSEXW wcex;
+	memset(&wcex, 0, sizeof(WNDCLASSEXW));
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_DROPSHADOW;
+	wcex.lpfnWndProc = PopupWndProc;
+	wcex.hInstance = GetModuleHandle(0);
+	wcex.hCursor = LoadCursor(0, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszClassName = L"popup_window";
+	RegisterClassExW(&wcex);
+	d3dwindow = CreateWindowExW(WS_EX_NOACTIVATE, wcex.lpszClassName, L"",
+		WS_VISIBLE | WS_POPUP,
+		0, 0, m_renderRectSize.x, m_renderRectSize.y, (HWND)m_windowMain->GetOSData()->hWnd, NULL, GetModuleHandle(0), NULL);
 	
 	HMENU hMenubar = CreateMenu();
 	HMENU hMenu = CreateMenu();
@@ -233,31 +257,14 @@ bool ModelEditor::Init()
 	AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&Reset camera");
 	AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&View");
 
-	/*WNDCLASSEXW wcex;
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = MenuWndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = GetModuleHandle(0);
-	wcex.hIcon = 0;
-	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = 0;
-	wcex.lpszClassName = L"mMenu";
-	wcex.hIconSm = 0;
-	RegisterClassExW(&wcex);*/
-
-	//menuwindow = CreateWindowW(wcex.lpszClassName, L"",
-	//	WS_VISIBLE | WS_POPUP ,
-	//	0, 0, m_renderRectSize.x, 20, (HWND)m_windowMain->GetOSData()->handle, NULL, GetModuleHandle(0), NULL);
-
-	SetMenu((HWND)m_windowMain->GetOSData()->handle, hMenubar);
+	SetMenu((HWND)m_windowMain->GetOSData()->hWnd, hMenubar);
 
 	m_windowMain->OnMove();
 
 	static mgf::SystemWindow tmpwnd;
-	tmpwnd.GetOSData()->handle = d3dwindow;
+	mgSystemWindowOSData* wndOSData = new mgSystemWindowOSData; // delete it later
+	wndOSData->hWnd = d3dwindow;
+	tmpwnd.SetOSData(wndOSData);
 	tmpwnd.SetSize(m_renderRectSize.x, m_renderRectSize.y);
 	if (!gsd3d11->Init(&tmpwnd, 0))
 	{
@@ -275,7 +282,7 @@ bool ModelEditor::Init()
 	}
 
 	mgf::GSTextureInfo fboinfo;
-	fboinfo.m_filter = mgf::GSTextureFilter::PPP;
+	fboinfo.m_filter = mgf::GSTextureInfo::Filter_PPP;
 	m_renderTexture = gsd3d11->CreateRenderTargetTexture(m_renderRectSize.x, m_renderRectSize.y, &fboinfo);
 	gsd3d11->SetRenderTarget(m_renderTexture);
 		
@@ -292,7 +299,7 @@ bool ModelEditor::Init()
 
 	gsd3d11->SetViewport(0, 0, m_renderRectSize.x, m_renderRectSize.y, 0, 0);
 
-	float cclr[4] = { 1.f, 0.4f, 0.4f, 1.f };
+	float cclr[4] = { 1.f, 0.40f, 0.4f, 1.f };
 	m_gs->SetClearColor(cclr);
 	m_gs->ClearAll();
 
@@ -311,7 +318,7 @@ void ModelEditor::Run()
 		//m_gs->SetClearColor(&cc.r);
 		m_framework->DrawAll();
 
-#ifdef WINDOWS_WINDOW_FOR_GS
+#ifdef DEMO_NATIVE_WIN32MENU
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
 		m_gs->EndDraw();
@@ -337,20 +344,20 @@ void WindowMain::OnMove()
 {
 	SystemWindow::OnMove();
 
-#ifdef WINDOWS_WINDOW_FOR_GS
+#ifdef DEMO_NATIVE_WIN32MENU
 	if (d3dwindow)
 	{
 		RECT clrct;
-		GetClientRect((HWND)GetOSData()->handle, &clrct);
+		GetClientRect((HWND)GetOSData()->hWnd, &clrct);
 		POINT pt;
 		pt.x = clrct.left;
 		pt.y = clrct.top;
-		ClientToScreen((HWND)GetOSData()->handle, &pt);
+		ClientToScreen((HWND)GetOSData()->hWnd, &pt);
 		clrct.left = pt.x;
 		clrct.top = pt.y;
 		pt.x = clrct.right;
 		pt.y = clrct.bottom;
-		ClientToScreen((HWND)GetOSData()->handle, &pt);
+		ClientToScreen((HWND)GetOSData()->hWnd, &pt);
 		clrct.right = pt.x;
 		clrct.bottom = pt.y;
 
@@ -368,9 +375,14 @@ void WindowMain::OnMove()
 #endif
 }
 
-#ifdef WINDOWS_WINDOW_FOR_GS
-LRESULT CALLBACK MenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+#ifdef DEMO_NATIVE_WIN32MENU
+LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	switch (message)
+	{
+	case WM_MOUSEACTIVATE:
+		return MA_NOACTIVATE;
+	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 #endif

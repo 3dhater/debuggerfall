@@ -1,5 +1,13 @@
 ﻿#include <string.h>
 
+#include "framework/mgf.h"
+
+#ifdef MG_DEBUG
+#pragma comment(lib, "mgfd.lib")
+#else
+#pragma comment(lib, "mgf.lib")
+#endif
+
 int main_game();
 int main_modelEditor();
 
