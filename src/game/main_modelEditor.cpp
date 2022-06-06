@@ -4,12 +4,22 @@
 #include "framework/GSD3D11.h"
 #include "framework/Window.h"
 #include "framework/Rectangle.h"
+#include "framework/Camera.h"
+#include "framework/Log.h"
+#include <filesystem>
+#include <stdio.h>
 
 // there is 3 types of menu 
 // (1)native menu, (2)migui with system window, and (3)migui without system window
 // comment all for 3
 //#define DEMO_NATIVE_WIN32MENU
 #define DEMO_SYSTEM_POPUP_MENU
+
+// And also 2 types of how to draw Graphics API things:
+//  1 - native Windows window
+//  2 - using render target texture. This type is more complex because
+//       this app use GDI. We need to get image from GPU texture, then
+//       put this data in BackendGDI texture.
 
 #ifdef DEMO_NATIVE_WIN32MENU
 #include <Windows.h>
@@ -53,12 +63,10 @@ WindowMain::WindowMain(
 	mgf::SystemWindow(windowFlags, windowPosition, windowSize)
 {
 	m_app = app;
-
 }
 
 WindowMain::~WindowMain()
 {
-
 }
 
 class WindowMainMenu : public mgf::Window
@@ -81,6 +89,157 @@ public:
 	};
 };
 
+class MyShader : public mgf::GSD3D11Shader
+{
+public:
+	MyShader() {}
+	virtual ~MyShader()
+	{
+		if (m_cbVertex) m_cbVertex->Release();
+		if (m_cbPixel) m_cbPixel->Release();
+	}
+
+	ID3D11Buffer* m_cbVertex = 0;
+	ID3D11Buffer* m_cbPixel = 0;
+
+	struct cbVertex
+	{
+		mgf::Mat4 WVP;
+		mgf::Mat4 W;
+	}m_cbVertexData;
+
+	struct cbPixel
+	{
+		mgf::Color BaseColor;
+		mgf::v4f SunPosition;
+	}m_cbPixelData;
+
+	virtual bool OnCreate(void* _data) override
+	{
+		mgf::GSData_D3D11* data = (mgf::GSData_D3D11*)_data;
+
+		if (!mgf::GSD3D11_createConstantBuffer(data->m_d3d11Device, sizeof(cbVertex), &m_cbVertex))
+		{
+			mgf::LogWriteError("%s: cant create constant buffer\n", MGF_FUNCTION);
+			return false;
+		}
+
+		if (!mgf::GSD3D11_createConstantBuffer(data->m_d3d11Device, sizeof(cbPixel), &m_cbPixel))
+		{
+			mgf::LogWriteError("%s: cant create constant buffer\n", MGF_FUNCTION);
+			return false;
+		}
+		return true;
+	}
+
+	virtual void SetConstants(void* _data) override
+	{
+		mgf::GSData_D3D11* data = (mgf::GSData_D3D11*)_data;
+
+		m_cbVertexData.WVP = data->m_gs->m_matrices[mgf::GS::MatrixType_WorldViewProjection];
+		m_cbVertexData.W = data->m_gs->m_matrices[mgf::GS::MatrixType_World];
+		m_cbPixelData.BaseColor.set(1.f, 1.f, 1.f);
+		m_cbPixelData.SunPosition.set(3.f, 10.f, 0.1f, 1.f);
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		D3D11_BUFFER_DESC d;
+		data->m_d3d11DevCon->Map(m_cbVertex, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		m_cbVertex->GetDesc(&d);
+		memcpy(mappedResource.pData, &m_cbVertexData, d.ByteWidth);
+		data->m_d3d11DevCon->Unmap(m_cbVertex, 0);
+		data->m_d3d11DevCon->VSSetConstantBuffers(0, 1, &m_cbVertex);
+
+		data->m_d3d11DevCon->Map(m_cbPixel, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		m_cbPixel->GetDesc(&d);
+		memcpy(mappedResource.pData, &m_cbPixelData, d.ByteWidth);
+		data->m_d3d11DevCon->Unmap(m_cbPixel, 0);
+		data->m_d3d11DevCon->PSSetConstantBuffers(0, 1, &m_cbPixel);
+
+		if (data->m_gs->m_currentTextures[0])
+		{
+			mgf::GSD3D11Texture* currTex = (mgf::GSD3D11Texture*)data->m_gs->m_currentTextures[0];
+			data->m_d3d11DevCon->PSSetShaderResources(0, 1, &currTex->m_textureResView);
+			data->m_d3d11DevCon->PSSetSamplers(0, 1, &currTex->m_samplerState);
+		}
+	}
+};
+
+class EditorModel;
+class MyMeshLoader : public mgf::MeshLoader
+{
+public:
+	MyMeshLoader(EditorModel* editorModel) : m_editorModel(editorModel) {}
+	virtual ~MyMeshLoader() {}
+
+	virtual void OnLoad(mgf::MeshBuilder* meshBuilder, mgf::Material* mat) override;
+
+	EditorModel* m_editorModel = 0;
+};
+
+class EditorModelPart
+{
+public:
+	EditorModelPart() {}
+	~EditorModelPart() 
+	{
+		if (m_meshCPU)
+			delete m_meshCPU;
+		if (m_meshGPU)
+			m_meshGPU->Release();
+	}
+
+	mgf::Mesh* m_meshCPU = 0;
+	mgf::GSMesh* m_meshGPU = 0;
+	mgf::GSMeshInfo m_meshInfo;
+};
+
+class EditorModel
+{
+	mgf::GS* m_gs = 0;
+	MyMeshLoader* m_loader = 0;
+public:
+	EditorModel(mgf::GS* gs)
+		:
+		m_gs(gs)
+	{
+		m_loader = new MyMeshLoader(this);
+	}
+	~EditorModel() 
+	{
+		for (size_t i = 0; i < m_parts.size(); ++i)
+		{
+			delete m_parts[i];
+		}
+		if (m_loader) delete m_loader;
+	}
+
+	std::vector<EditorModelPart*> m_parts;
+	void AddMesh(mgf::Mesh* m)
+	{
+		if (m)
+		{
+			mgf::GSMeshInfo mi;
+			mi.m_meshPtr = m;
+			mgf::GSMesh* meshGPU = m_gs->CreateMesh(&mi);
+			if (meshGPU)
+			{
+				EditorModelPart* newPart = new EditorModelPart;
+				newPart->m_meshCPU = m;
+				newPart->m_meshGPU = meshGPU;
+				newPart->m_meshInfo = mi;
+				m_parts.push_back(newPart);
+			}
+		}
+	}
+
+	void Load(const wchar_t* fn)
+	{
+		m_loader->LoadMesh(fn, 0);
+	}
+};
+
+
+
 class ModelEditor
 {
 public:
@@ -90,6 +249,10 @@ public:
 	mgf::Framework* m_framework = 0;
 	WindowMain* m_windowMain = 0;
 	WindowMainMenu* m_windowMenu = 0;
+
+	EditorModel* m_model = 0;
+	mgf::GSTexture* m_generatedTexture = 0;
+	MyShader* m_myShader = 0;
 
 	mgf::GS* m_gs = 0;
 	mgf::Backend* m_backend = 0;
@@ -101,7 +264,13 @@ public:
 	mgTexture* m_GDIRenderTexture = 0;
 	mgf::GSTexture* m_renderTexture = 0;
 
+	mgColor m_colorRed;
+	mgColor m_colorGreen;
+	mgColor m_colorBlue;
+
 	mgPoint m_renderRectSize;
+
+	mgf::Camera m_camera;
 
 	bool Init();
 	void Run();
@@ -115,6 +284,9 @@ ModelEditor::ModelEditor()
 
 ModelEditor::~ModelEditor()
 {
+	if (m_model) delete m_model;
+	if (m_generatedTexture) m_generatedTexture->Release();
+	if (m_myShader) m_myShader->Release();
 	if (m_renderTexture) m_renderTexture->Release();
 	if (m_gs) m_gs->Release();
 	if (m_windowMenu) m_windowMenu->Release();
@@ -217,12 +389,18 @@ bool ModelEditor::Init()
 	
 	m_backend = new mgf::BackendGDI();
 	m_GUIContext = m_framework->CreateContext(m_windowMain, m_backend);
-	m_menuFont = m_backend->CreateFontPrivate(L"..\\data\\fonts\\lt_internet\\LTInternet-Regular.ttf", 11, false, false, L"LT Internet");
+	if (std::filesystem::exists("..\\data\\fonts\\lt_internet\\LTInternet-Regular.ttf"))
+		m_menuFont = m_backend->CreateFontPrivate(L"..\\data\\fonts\\lt_internet\\LTInternet-Regular.ttf", 11, false, false, L"LT Internet");
+	else
+		m_menuFont = m_backend->CreateFont(L"Arial", 11, false, false);
 
 	m_windowMain->OnSize();
 
 	m_renderRectSize.x = m_windowMain->GetSize().x;
 	m_renderRectSize.y = 400;
+
+	if (m_renderRectSize.x < 100) // ??. who knows maybe m_windowMain->GetSize().x is bad  
+		m_renderRectSize.x = 100;
 	
 
 	mgf::GSD3D11* gsd3d11 = new mgf::GSD3D11();
@@ -304,32 +482,136 @@ bool ModelEditor::Init()
 	m_gs->ClearAll();
 
 	m_windowMain->OnSize();
+
+	m_camera.Reset(); // make default rotations for EditorCamera
+	m_camera.m_aspect = m_renderRectSize.x / m_renderRectSize.y; // set by hands
+	for(int i = 0; i < 20; ++i)
+		m_camera.EditorZoom(1); // zoom for mouse wheel, so simulate it
+	m_camera.EditorUpdate(); // and first update. next update only when move\rotate camera
+
+	{
+		mgf::Image img;
+		img.Create(32, 32, m_framework->GetColor(mgf::ColorName::Red));
+		img.Fill(img.fillType_checkers, m_framework->GetColor(mgf::ColorName::Red), m_framework->GetColor(mgf::ColorName::Blue));
+		mgf::GSTextureInfo ti;
+		ti.SetImage(&img);
+		m_generatedTexture = m_gs->CreateTexture(&ti);
+	}
+
+	{
+		m_myShader = new MyShader;
+		mgf::GSShaderInfo si;
+		si.vsEntry = "VSMain";
+		si.psEntry = "PSMain";
+		si.vsText = "Texture2D tex2d_1;\n"
+			"SamplerState tex2D_sampler_1;\n"
+			"struct VSIn{\n"
+			"   float3 position : POSITION;\n"
+			"	float2 uv : TEXCOORD;\n"
+			"   float3 normal : NORMAL;\n"
+			"   float3 binormal : BINORMAL;\n"
+			"   float3 tangent : TANGENT;\n"
+			"   float4 color : COLOR;\n"
+			"};\n"
+			"cbuffer cbVertex{\n"
+			"	float4x4 WVP;\n"
+			"	float4x4 W;\n"
+			"};\n"
+			"cbuffer cbPixel{\n"
+			"	float4 BaseColor;\n"
+			"	float4 SunPosition;\n"
+			"};\n"
+			"struct VSOut{\n"
+			"   float4 pos : SV_POSITION;\n"
+			"	float2 uv : TEXCOORD0;\n"
+			"	float4 vColor : COLOR0;\n"
+			"	float3 normal : NORMAL0;\n"
+			"	float4 fragPos : NORMAL1;\n"
+			"};\n"
+			"struct PSOut{\n"
+			"    float4 color : SV_Target;\n"
+			"};\n"
+			"VSOut VSMain(VSIn input){\n"
+			"   VSOut output;\n"
+			"	output.pos   = mul(WVP, float4(input.position.x, input.position.y, input.position.z, 1.f));\n"
+			"	output.uv.x    = input.uv.x;\n"
+			"	output.uv.y    = input.uv.y;\n"
+			"	output.vColor    = input.color;\n"
+			"	output.normal    = normalize(mul((float3x3)W, input.normal));\n"
+			"	output.fragPos    = mul(W, float4(input.position.x, input.position.y, input.position.z, 1.f));\n"
+			"	return output;\n"
+			"}\n"
+			"PSOut PSMain(VSOut input){\n"
+			"	float3 lightDir = normalize(SunPosition.xyz - input.fragPos.xyz);\n"
+			"	float diff = max(dot(input.normal, lightDir), 0.0);\n"
+
+			"   PSOut output;\n"
+			"   output.color = tex2d_1.Sample(tex2D_sampler_1, input.uv) * BaseColor;\n"
+			"	if(diff>1.f) diff = 1.f;\n"
+			"	output.color.xyz *= diff;\n"
+			"    return output;\n"
+			"}\n";
+		si.psText = si.vsText;
+		m_gs->CreateShader(m_myShader, &si);
+	}
+
+	m_model = new EditorModel(m_gs);
+
 	return true;
 }
 
 void ModelEditor::Run()
 {
-	//mgColor cc;
-	//uint32_t cci = 0x000000;
+	m_colorRed.setAsIntegerRGB(0xFF0000);
+	m_colorGreen.setAsIntegerRGB(0xFF00);
+	m_colorBlue.setAsIntegerRGB(0xFF);
+
+	mgPoint cameraRotation(1, 0);
+	float* dt = m_GUIContext->GetDeltaTime();
 
 	while (m_framework->Run())
 	{
-		//cc.setAsIntegerRGB(cci++);
-		//m_gs->SetClearColor(&cc.r);
 		m_framework->DrawAll();
 
 #ifdef DEMO_NATIVE_WIN32MENU
 		m_gs->BeginDraw();
 		m_gs->ClearAll();
+		m_gs->DrawLine3D(mgf::v4f(-1.f, 0.f, 0.f, 0.f), mgf::v4f(1.f, 0.f, 0.f, 0.f), m_colorRed);
+		m_gs->DrawLine3D(mgf::v4f(0.f, -1.f, 0.f, 0.f), mgf::v4f(0.f, 1.f, 0.f, 0.f), m_colorGreen);
+		m_gs->DrawLine3D(mgf::v4f(0.f, 0.f, -1.f, 0.f), mgf::v4f(0.f, 0.f, 1.f, 0.f), m_colorBlue);
 		m_gs->EndDraw();
 		m_gs->SwapBuffers();
 #else
 		m_gs->ClearAll();
+		m_gs->DrawLine3D(mgf::v4f(-1.f, 0.f, 0.f, 0.f), mgf::v4f(1.f, 0.f, 0.f, 0.f), m_colorRed);
+		m_gs->DrawLine3D(mgf::v4f(0.f, -1.f, 0.f, 0.f), mgf::v4f(0.f, 1.f, 0.f, 0.f), m_colorGreen);
+		m_gs->DrawLine3D(mgf::v4f(0.f, 0.f, -1.f, 0.f), mgf::v4f(0.f, 0.f, 1.f, 0.f), m_colorBlue);
+		
+		if (m_model)
+		{
+			m_gs->SetTexture(0, m_generatedTexture);
+			for (size_t i = 0, sz = m_model->m_parts.size(); i < sz; ++i)
+			{
+				if (m_model->m_parts[i]->m_meshGPU)
+				{
+					m_gs->SetMesh(m_model->m_parts[i]->m_meshGPU);
+					
+					m_gs->SetShader(m_myShader);
+				}
+			}
+			mgf::Mat4 World;
+			m_gs->m_matrices[mgf::GS::MatrixType_World] = World;
+			m_gs->m_matrices[mgf::GS::MatrixType_WorldViewProjection] = m_camera.m_projectionMatrix * m_camera.m_viewMatrix * World;
+			m_gs->Draw(0);
+		}
 
 		m_gs->GetTextureCopyForImage(m_renderTexture, m_GDIRenderTextureImage);
 		m_backend->UpdateTexture(m_GDIRenderTexture, m_GDIRenderTextureImage->GetMGImage());
 #endif
 
+		m_camera.EditorRotate(&cameraRotation, *dt);
+		m_camera.EditorUpdate();
+		m_gs->m_matrices[mgf::GS::MatrixType_ViewProjection] = m_camera.m_viewProjectionMatrix;
 	}
 }
 
@@ -387,3 +669,7 @@ LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 }
 #endif
 
+void MyMeshLoader::OnLoad(mgf::MeshBuilder* meshBuilder, mgf::Material* mat)
+{
+	m_editorModel->AddMesh(meshBuilder->CreateMesh(0));
+}
